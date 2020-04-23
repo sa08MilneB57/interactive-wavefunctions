@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Harmonic Potential Well Simulation</title>
+  <style>
+    html, body{
+      padding: 0;
+      margin: 0;
+      border: 0;
+      height:100%;
+      width:100%;
+    }
+    img {
+      padding:10px;
+    }
+    .imagebox{
+      text-align: center;
+    }
+    #wrapper {
+      height:100%;
+      width:100%;
+      padding: 0;
+      margin: 0;
+      border: 0;
+    }
+    #containment{
+      width:80%;
+      height:100%;
+      padding: 0;
+      margin: 0;
+      border: 0;
+      float:left;
+    }
+    #sidebar{
+      width:20%;
+      height:100%;
+      padding: 0;
+      margin: 0;
+      border: 0;
+      float:right;
+      background-color: #88F;
+      color: #002;
+    }
+    #XLABEL{
+      color:Maroon;
+    }
+    #YLABEL{
+      color:DarkBlue;
+    }
+    #ZLABEL{
+      color:DarkGreen;
+    }
+  </style>
+  <script src="mathplus.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.0.0/lib/p5.js"></script>
+</head>
+
+<body>
+  <script src="psimath.js"></script>
+  <script src="sketch.js"></script>
+  <div id="wrapper">
+    
+    <div id="containment">
+    </div>
+    
+    <div id="sidebar">
+      <p id="XLABEL"><b>Position</b> In Space</p>
+      <p id="YLABEL"><b>Real</b> Part of Psi</p>
+      <p id="ZLABEL"><b>Imaginary</b> Part of Psi</p>
+      <p> Time Acceleration Factor:</p>
+      <input id="timeAcc" type="number" step="0.2" value="1" autocomplete="off"/>
+      <p id="massLabel">Mass: 25</p>
+      <input id="massSlider" type="range" min="0.001" max="100" value="25" step="0.001" autocomplete="off"/>
+      <p id="KLabel">Spring Constant: 2</p>
+      <input id="KSlider" type="range" min="0.001" max="10" value="2" step="0.001" autocomplete="off"/>
+      <p id="freqEq" class="imagebox">
+        <img src="./equations/frequency.gif" alt="frequency equals omega_nought over 2pi"/>
+        <img src="./equations/omeganought.gif" alt="omega_nought equals the squareroot of K/m"/>
+      </p>
+      <p>Coefficients:</p>
+      <input id="cInput" value="2i+3.1,1-2.03i,-3.2+4.21i" autocomplete="off"/>
+      <input id="cButton" type="button" value="Apply Coeff." onClick="buttFunk()" autocomplete="off"/>
+      <p id="psiequation" class="imagebox">
+        <img src="./equations/psi.gif" alt="psi equals the sum of coefficents multiplied by their  corresponding n-ket"/>
+      </p>
+
+    </div>
+  </div>
+</body>
+
+</html>
