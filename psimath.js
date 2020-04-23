@@ -2,9 +2,9 @@
 
 'use strict'
 let detail = 301;
-let reDomain = 3;
+let domainSize = 5;
 let coef = (CompArr.ones(32)).vecNorm();
-let xspace  = linspace(-reDomain,reDomain,detail);
+let xspace  = linspace(-domainSize,domainSize,detail);
 let yspace;
 let pdf;
 let yscaling;//this is a variable to bump up the size of the numbers so javascript doesn't disapear them all
@@ -29,7 +29,7 @@ function recalculate(){
     a = m*w0;
     potential = xspace.map(x=>K*(x**2)/2);
     ax = xspace.map(x=>x*Math.sqrt(a));
-    xscaling=(width/2)/reDomain;
+    xscaling=(width/2)/domainSize;
     yscaling=(height/2)
     eigenStorage.length=0;
     coef = coef.vecNorm();
@@ -40,7 +40,7 @@ function superposition(time=0){
     let psi = CompArr.zeros(detail)
     let n;
     for (n of range(coef.length)){
-        if(ZEROc.equals(coef[n])){continue;}
+        if(ZEROc.equals(coef[n])){continue;}//skips zero coef. for more efficient rendering
         let phasor=coef[n].mult(expC([0,w0*(n+0.5)*time]));
         psi = psi.add(eigenStorage[n].mult(phasor));
     }
@@ -73,21 +73,14 @@ function axes(){
     vertex(-width/2,0,0);
     vertex(width/2,0,0);
     endShape();
-    translate(width/6,0,0);
+    let i;
+    for (i of range(domainSize)){
+    translate(width/(2*domainSize),0,0);
         push();
         rotateZ(-Math.PI/2);
         cone(10, 20, 4, 16);
         pop();
-    translate(width/6,0,0);
-        push();
-        rotateZ(-Math.PI/2);
-        cone(10, 20, 4, 16);
-        pop();
-    translate(width/6,0,0);
-        push();
-        rotateZ(-Math.PI/2);
-        cone(10, 20, 4, 16);
-        pop();
+    }
     pop();
 
     push();stroke("blue");beginShape();

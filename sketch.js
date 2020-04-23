@@ -46,7 +46,8 @@ function setup() {
     KSlider = document.getElementById("KSlider");
     cInput = document.getElementById("cInput");
     cButton = document.getElementById("cButton");
-
+    detailIn = document.getElementById("detailIn");
+    xSizeIn = document.getElementById("xSizeIn");
 }
 
 function draw() {
@@ -75,4 +76,9 @@ function draw() {
     drawPsi(t/1000);
 }
 
-function buttFunk(){coef=new CompArr(cInput.value.split(","));recalculate();};
+function buttFunk(){
+    detail = Number(detailIn.value);
+    domainSize = Number(xSizeIn.value);
+    xspace  = linspace(-domainSize,domainSize,detail);
+    coef=new CompArr(cInput.value.split(","));
+    recalculate();}
