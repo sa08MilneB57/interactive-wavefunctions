@@ -12,6 +12,8 @@ let cInput;
 let cButton;
 let tempEl;
 let timeAcc;
+let detailIn;
+let xSizeIn;
 let t=0;
 
 function preload() {
