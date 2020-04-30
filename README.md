@@ -9,14 +9,20 @@ a*b: multiplication
 a/b: division (left-assosciative)
 a^b: exponenentiation (right-assosciative)
 
+
 #Trigonometric Functions
 sin(z) cos(z) tan(z)
+
+
 #Hyperbolic Functions
 sinh(z) cosh(z) tanh(z)
+
+
 #Inverse Trig & Hyp Functions
 These use the principle value.
 asin(z) acos(z) atan(z)
 asinh(z) acosh(z) atanh(z)
+
 
 #If possible use these rather than alternatives like ^
 square(z) sqrt(z) exp(z) 
