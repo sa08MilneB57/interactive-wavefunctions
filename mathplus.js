@@ -1,17 +1,4 @@
 'use strict'
-var debugModeActive =false;
-function debug(a){
-    if (typeof a === 'undefined'){debugModeActive=!debugModeActive;return debugModeActive;
-    }else if (isBoolean(a)){debugModeActive=a;return debugModeActive;
-    }else{throw "Looks like its time to debug the debugger. bugger."}
-}
-function debugCall(message,...objs){
-    if (debugModeActive){
-        console.log("Debug Message: "+message);
-        let obj;
-        for (obj of objs){console.log(obj);}
-    }
-}
 
 
 //=======Variable Checkers==============//
@@ -26,6 +13,33 @@ function isCompLike(arg) {
     return (isNumber(arg)||isString(arg)
         ||( isArr(arg)&&arg.length==2&&arg.every(isNumber) ))}
 
+//=========Miscellaneous Non-Math Functions========//
+var debugModeActive =false;
+function debug(a){
+    if (typeof a === 'undefined'){debugModeActive=!debugModeActive;return debugModeActive;
+    }else if (isBoolean(a)){debugModeActive=a;return debugModeActive;
+    }else{throw "Looks like its time to debug the debugger. bugger."}
+}
+function debugCall(message,...objs){
+    if (debugModeActive){
+        console.log("Debug Message: "+message);
+        let obj;
+        for (obj of objs){console.log(obj);}
+    }
+}
+function matchIndex(re,str){
+  let matches = [];
+  let match;
+  while ((match = re.exec(str)) != null) {
+    matches.push(match.index);
+  }
+  return matches;
+}
+
+function replaceAt(str,index,replacement) {
+    //replaces the indexth element of string with replacement and returns new string
+    return str.substr(0, index) + replacement+ str.substr(index + replacement.length);
+}
 
 
 //=======Array Handling and Generation=====///
@@ -44,6 +58,24 @@ function linspace(low,high,len) {
         arr.push(low + (step * i));
     }
     return arr;
+}
+
+//========Randomness Functions================//
+function randInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;}
+
+function randFrom(list){return list[ randInt(0,list.length-1) ];}
+
+function shuffleArr(list){
+    let from=[...range(list.length)];
+    let perm=[];
+    let ans=[];
+    while(from.length>0){perm.push(from.splice(randInt(0,from.length-1),1)[0]);}
+    let x;
+    for (x of range(perm.length)){ans.push(list[perm[x]]);}
+    return ans;
 }
 
 //=======Non Complex Math Functions=========//
@@ -67,30 +99,10 @@ function H (n,x) {
     y *= factorial(n);
     return y;
 }
-//========Randomness Functions================//
-function randInt(min, max) {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min + 1)) + min;}
-
-function randFrom(list){return list[ randInt(0,list.length-1) ];}
-
-function shuffleArr(list){
-    let from=[...range(list.length)];
-    let perm=[];
-    let ans=[];
-    while(from.length>0){perm.push(from.splice(randInt(0,from.length-1),1)[0]);}
-    let x;
-    for (x of range(perm.length)){ans.push(list[perm[x]]);}
-    return ans;
-}
-
 
 
 
 //==================Complex Numbers===========================
-
-
 
 class Complex {
     //Definition of Complex numbers
@@ -319,6 +331,8 @@ class Complex {
             if (power.re>0){//0^z is only defined when Re(z)>0
                 return new Complex(0);
             } else {return new Complex(NaN,NaN)}
+        } else if(power.im==0&&power.re%2==0&&this.re<0&&this.im==0){//special case for raising a negative number to an even power
+            return new Complex((-this.re)**power.re,0);
         }
         return (this.ln(branch).mult(power)).exp();
     }
@@ -328,8 +342,36 @@ class Complex {
         if (!isComp(base)){base = new Complex(base);} //casts base to Complex
         return base.raiseTo(this,branch);
     }
-}
+    //===========Trigonometric Functions==================
+    sin(){
+        let i = new Complex(0,1);
+        return this.mult(i).exp().sub(this.mult(i.neg()).exp()).divBy(i.mult(2));
+    }
+    cos(){
+        let i = new Complex(0,1);
+        return this.mult(i).exp().add(this.mult(i.neg()).exp()).divBy(2);
+    }
+    tan(){return this.sin().divBy(this.cos());}
 
+    sinh(){return this.exp().sub(this.neg().exp()).divBy(2);}
+    cosh(){return this.exp().add(this.neg().exp()).divBy(2);}
+    tanh(){return this.sinh().divBy(this.cosh());}
+    asin(branch=0){
+        let i = new Complex(0,1);
+        return this.square().neg().add(1).sqrt(branch).add(this.mult(i)).ln(branch).mult(i.neg());}
+    acos(branch=0){
+        return this.asin(branch).neg().add(Math.PI/2);}
+    atan(branch=0){
+        let i = new Complex(0,1);
+        return i.divBy(2).mult(i.add(this).divBy(i.sub(this)).ln(branch));}
+    asinh(branch=0){
+        return this.square().add(1).sqrt(branch).add(this).ln(branch);}
+    acosh(branch=0){
+        return this.add(this.sub(1).sqrt(branch).mult(this.add(1).sqrt(branch))).ln(branch);}
+    atanh(branch=0){
+        return this.add(1).ln(branch).sub(this.subFrom(1).ln(branch)).mult(1/2);
+    }
+}
 
 
 //====================================Complex Arrays=============================================
@@ -478,16 +520,11 @@ class CompArr extends Array {
         return zipmapC(divC,this,den);}
 
     //===========ARRAY POWERS AND EXPONENTIAL STUFF==================//
-    exp(){
-        return this.map( (z)=>z.exp() );}
-    ln(branch=0){
-        return this.map( (z)=>z.ln(branch) );}
-    square(){
-        return this.map( (z)=>z.square() );}
-    cube(){
-        return this.map( (z)=>z.cube() );}
-    sqrt(branch=0){
-        return this.map( (z)=>z.sqrt(branch) );}
+    exp(){return this.map( (z)=>z.exp() );}
+    ln(branch=0){return this.map( (z)=>z.ln(branch) );}
+    square(){return this.map( (z)=>z.square() );}
+    cube(){return this.map( (z)=>z.cube() );}
+    sqrt(branch=0){return this.map( (z)=>z.sqrt(branch) );}
     log(bases,branch=0){
         if (isCompLike(bases)){bases=new Complex(bases);}
         if (isComp(bases)){bases=CompArr.repeat(bases,this.length)}
@@ -504,24 +541,75 @@ class CompArr extends Array {
         if (isCompLike(base)){base=new Complex(base);}
         if (isComp(base)){base=CompArr.repeat(base,this.length)}
         return zipmapEndValC(powC,branch,base,this);}
+
+    //===========TRIGONOMETRIC & HYPERBOLIC FUNCTIONS==========//
+    sin(){return this.map( (z)=>z.sin() );}
+    cos(){return this.map( (z)=>z.cos() );}
+    tan(){return this.map( (z)=>z.tan() );}
+    sinh(){return this.map( (z)=>z.sinh() );}
+    cosh(){return this.map( (z)=>z.cosh() );}
+    tanh(){return this.map( (z)=>z.tanh() );}
+    asin(branch=0){return this.map( (z)=>z.asin(branch) );}
+    acos(branch=0){return this.map( (z)=>z.acos(branch) );}
+    atan(branch=0){return this.map( (z)=>z.atan(branch) );}
+    asinh(branch=0){return this.map( (z)=>z.asinh(branch) );}
+    acosh(branch=0){return this.map( (z)=>z.acosh(branch) );}
+    atanh(branch=0){return this.map( (z)=>z.atanh(branch) );}
+
     //===========ARRAY-ONLY MATHS=============================//
     sum(){return this.reduce((x,y) => x.add(y));}
     product(){return this.reduce((x,y) => x.mult(y));}
 
-    maxRe ()  {return Math.max(...this.re);}
-    lrgstRe (){return Math.max(...this.re.map( x=>Math.abs() ));}
-    minRe ()  {return Math.min(...this.re);}
-    smlstRe (){return Math.min(...this.re.map( x=>Math.abs() ));}
-    spanRe () {return this.maxRe-this.minRe;}
+    maxRe (ascomp=true)  {
+        ans = Math.max(...this.re);
+        if (ascomp){return new Complex(ans);
+        } else { return ans;}}
+    lrgstRe (ascomp=true){
+        ans = Math.max(...this.re.map( x=>Math.abs() ));
+        if (ascomp){return new Complex(ans);
+        } else { return ans;}}
+    minRe (ascomp=true)  {
+        ans = Math.min(...this.re);
+        if (ascomp){return new Complex(ans);
+        } else { return ans;}}
+    smlstRe (ascomp=true){
+        ans = Math.min(...this.re.map( x=>Math.abs() ));
+        if (ascomp){return new Complex(ans);
+        } else { return ans;}}
+    spanRe (ascomp=true) {
+        ans = this.maxRe-this.minRe;
+        if (ascomp){return new Complex(ans);
+        } else { return ans;}}
 
-    maxIm ()  {return Math.max(...this.im);}
-    lrgstIm (){return Math.max(...this.im.map( x=>Math.abs() ));}
-    minIm ()  {return Math.min(...this.im);}
-    smlstIm (){return Math.min(...this.im.map( x=>Math.abs() ));}
-    spanIm () {return this.maxIm-this.minIm;}
+    maxIm (ascomp=true)  {
+        ans = Math.max(...this.im);
+        if (ascomp){return new Complex(ans);
+        } else { return ans;}}
+    lrgstIm (ascomp=true){
+        ans = Math.max(...this.im.map( x=>Math.abs() ));
+        if (ascomp){return new Complex(ans);
+        } else { return ans;}}
+    minIm (ascomp=true)  {
+        ans = Math.min(...this.im);
+        if (ascomp){return new Complex(ans);
+        } else { return ans;}}
+    smlstIm (ascomp=true){
+        ans = Math.min(...this.im.map( x=>Math.abs() ));
+        if (ascomp){return new Complex(ans);
+        } else { return ans;}}
+    spanIm (ascomp=true) {
+        ans = this.maxIm-this.minIm;
+        if (ascomp){return new Complex(ans);
+        } else { return ans;}}
 
-    maxMag () {return Math.max(...this.mag());}
-    minMag () {return Math.min(...this.mag());}
+    maxMag (ascomp=true) {
+        ans = Math.max(...this.mag());
+        if (ascomp){return new Complex(ans);
+        } else { return ans;}}
+    minMag (ascomp=true) {
+        ans = Math.min(...this.mag());
+        if (ascomp){return new Complex(ans);
+        } else { return ans;}}
 
     //=========VECTOR FUNCTIONS==========================//
     //the following functions treat "this" as a vector in C^(this.length),
@@ -530,6 +618,159 @@ class CompArr extends Array {
         //returns normalised vector
         return this.divBy(this.vecMag());}
 }
+
+///======================EXPRESSION PARSER====================================================================///
+function parseToRPN(expression,allowedVars=""){
+    //Converts mathematical expressions to RPN
+    //Uses slightly tweaked shunting yard algorithm to convert to a queue in
+    //allowedVars defines allowed characters to use on their own as variables.
+    allowedVars=allowedVars.replace(/\s/g,"").toLowerCase();//removes whitespace and sets lowercase
+    if (/(.).*\1/.test(allowedVars)){debugCall("repeated variable names");throw "repeated variable names";}
+    if (/[pie]/.test(allowedVars)){debugCall("No pie allowed.");
+        throw "The letters p, i, and e are not allowed as math variables.";}
+    
+    expression=expression.replace(/\s/g,"").toLowerCase();//removes whitespace and sets lowercase
+    //REPLACE "--" with "+"
+    expression = expression.replace(/--/g,"+");
+    //REPLACE UNARY "-" with alternate  "_"
+    expression = expression.replace(/([\(\^*\/+\-])-/g,"$1_");
+    //REPLACE UNARY "+" with ""
+    expression = expression.replace(/([\(\^*\/+\-])\+/g,"$1");
+    debugCall("Predigested Expression:",expression);
+    //This defines the valid functions
+    //let validOperand = /^((([uvwte]|pi|\d+(\.\d+)?)i)|(i?([uvwte]|pi|\d+(\.\d+)?)))/;
+    let validOperand = new RegExp("^(((["+ allowedVars +"e](?!xp)|pi|\\d+(\\.\\d+)?)i)|(i?(["+ allowedVars +"e](?!xp)|pi|\\d+(\\.\\d+)?)))");
+    let validFunction = /^(sin|cos|tan|sinh|cosh|tanh|asin|acos|atan|asinh|acosh|atanh|sqrt|square|exp|ln|log|root|re|im|mag|arg|conj)/;
+    let validUnaryPre = /^_/;
+    let validBinary = /^[+\-*\/\^]/;
+    let maxIter = expression.length;
+    let iters = 0;
+    let outqueue = [];
+    let opstack = [];
+    let curtoken,poppables;
+    while (expression.length>0){
+        debugCall("SoL "+iters);
+        if (validOperand.test(expression)){//if it starts with a number
+            curtoken = validOperand.exec(expression)[0];
+            outqueue.push(curtoken);
+            expression = expression.replace(validOperand,"");
+        } else if (validUnaryPre.test(expression)){
+            curtoken = validUnaryPre.exec(expression)[0];
+            opstack.push(curtoken);
+            expression = expression.replace(validUnaryPre,"");
+        } else if (validFunction.test(expression)){
+            curtoken = validFunction.exec(expression)[0];
+            opstack.push(curtoken);
+            expression = expression.replace(validFunction,"");
+        } else if (expression[0]==","){
+            curtoken = ",";
+            while (opstack[opstack.length - 1]!="("){//pops until it finds a left bracket
+                outqueue.push(opstack.pop());
+            }
+            expression = expression.substring(1);
+        } else if (validBinary.test(expression)){
+            curtoken = validBinary.exec(expression)[0];
+            switch(curtoken) {
+                case "+":
+                case "-"://left associative
+                    poppables = /[+\-*\/\^_]/;
+                    break;
+                case "*":
+                case "/"://left associative
+                    poppables = /[*\/\^_]/;
+                    break;
+                case "^"://right associative
+                    poppables = /_/;
+                    break;
+                default:
+                    debugCall("Binary Operator Hiccup Error");
+                    throw "This code should not be reachable.";
+            }
+            // \/ pops all the poppables \/
+            while (poppables.test(opstack[opstack.length - 1])){outqueue.push(opstack.pop());}
+            opstack.push(curtoken);
+            expression = expression.replace(validBinary,"");
+        } else if (expression[0]=="("){
+            curtoken = "(";
+            opstack.push(curtoken);
+            expression = expression.substring(1);
+        } else if (expression[0]==")"){
+            curtoken = ")";
+            while (opstack[opstack.length - 1]!="("){//pops until it finds a left bracket
+                outqueue.push(opstack.pop());
+            }
+            opstack.pop();//discards left bracket
+            if (validFunction.test(opstack[opstack.length - 1])){
+                outqueue.push(opstack.pop());//pops if there is a function at the top of the opstack
+            }
+            expression = expression.substring(1);
+        } else {debugCall("Invalid value encountered while parsing to RPN.");
+            throw"Invalid expression error";}
+        debugCall("EoL Expression:",expression);
+        debugCall("EoL Opstack:",opstack);
+        debugCall("EoL Outqueue:",outqueue);
+        debugCall("EoL");
+        iters++;
+        if (iters>maxIter){debugCall("Infinite Loop Discovered");break;}
+    }
+    while (opstack.length>0){
+        outqueue.push(opstack.pop())
+    }
+    return outqueue;
+}
+
+function evalC(expression,allowedVars="",...variables){
+    allowedVars=allowedVars.replace(/\s/g,"");
+    if (/(.).*\1/.test(allowedVars)){debugCall("repeated variable names");throw "repeated variable names";}
+    //this dictionary maps strings from the RPN stack to actual functions and values
+    //      the number refers to the number of inputs that function expects
+    //      this approach makes it easy to add more functions to this list (add names to RPN RegEx as well)
+    let dict={"_":[1,negC],"+":[2,addC],"-":[2,subC],
+        "*":[2,multC],"/":[2,divC],"^":[2,powC],
+        "sin":[1,sinC],"cos":[1,cosC],"tan":[1,tanC],
+        "asin":[1,asinC],"acos":[1,acosC],"atan":[1,atanC],
+        "sinh":[1,sinhC],"cosh":[1,coshC],"tanh":[1,tanhC],
+        "asinh":[1,asinhC],"acosh":[1,acoshC],"atanh":[1,atanhC],
+        "square":[1,squareC],"sqrt":[1,sqrtC],"exp":[1,expC],"ln":[1,lnC],
+        "log":[2,logC],"root":[2,rootC],
+        "re":[1,reC],"im":[1,imC],
+        "mag":[1,magC],"arg":[1,conjC],
+        "pi":[0,PIc],"e":[0,Ec]};
+    //this section is so you can translate to RPN once and then evaluate the expression times when variables change to minimise load
+    let inQueue,tempvar1,tempvar2,curtoken;
+    let outStack = [];
+    if (isString(expression)){inQueue = parseToRPN(expression,allowedVars);}//if string passed it is assumed to be mathematical expression
+    else if (isArr(expression)){inQueue = [...expression];}//if array passed, it is assumed to be predigested RPN
+    else {debugCall("must be string or array for evalC");throw "invalid expression";}
+    while (inQueue.length > 0){
+        curtoken=inQueue.shift();
+        debugCall("SoL Token:",curtoken);
+        if (curtoken in dict){
+            switch (dict[curtoken][0]){
+                case 0://push e and pi straight to the outStack
+                    outStack.push(dict[curtoken][1]);
+                    break;
+                case 1:
+                    tempvar1=outStack.pop();
+                    outStack.push(dict[curtoken][1](tempvar1));
+                    break;
+                case 2:
+                    tempvar2=outStack.pop();
+                    tempvar1=outStack.pop();
+                    outStack.push(dict[curtoken][1](tempvar1,tempvar2));
+                    break;
+            }
+        } else if (allowedVars.includes(curtoken)) {
+            outStack.push(cast(variables[allowedVars.indexOf(curtoken)]));
+        } else {outStack.push(new Complex(curtoken));}//if it wasn't in the dict or a variable, push to stack as complex   
+        debugCall("EoL inQueue:",inQueue);
+        debugCall("EoL outStack:",outStack);
+        }
+    if (outStack.length!=1){debugCall("outStack length issue");throw "parsing error";}
+    return outStack[0];
+}
+
+
 
 //=======Useful Constants===============//
 const Ic = new Complex(0,1);
@@ -542,7 +783,6 @@ const ONEc = new Complex(1,0);
 //This stuff is all just for refactoring
 
 function cast(z){
-    debugCall("cast input",z);
     //casts strings,numbers, and length 2 arrays of numbers to Complex
     //casts arrays of any other length to CompArr
     if (isCompLike(z) ){
@@ -555,7 +795,6 @@ function cast(z){
         debugCall("Problem Casting z:",z);
         throw "Improper z for casting."
     }
-    debugCall("cast output",z);
     return z;
 }
 
@@ -579,8 +818,15 @@ function zipmapEndValC(func,val,...CArrs){
     return ans;
 }
 
-//=====Convenience Functions for alternate attributes syntax=============//
-
+//=====Convenience Syntax for attributes =============//
+function reC(z){
+    z=cast(z);
+    return z.re();
+}
+function imC(z){
+    z=cast(z);
+    return z.im();
+}
 function negC(z){
     z=cast(z);
     return z.neg();
@@ -609,7 +855,7 @@ function mag2C(z){
     z=cast(z);
     return z.mag2();
 }
-//=====Convenience Functions for alternate arithmetic syntax=============//
+//=====Convenience Syntax for arithmetic functions=============//
 
 function eqC(a,b,within=0){
     a=cast(a);
@@ -637,7 +883,7 @@ function divC (num,den){
     return num.divBy(den);
 }
 
-//======Complex Functions for Alternate Syntax===============//
+//======Exponential and Logarithmic Functions for Alternate Syntax===============//
 
 function squareC(z){
     z=cast(z);
@@ -651,7 +897,7 @@ function rootC(z,radicand=2,branch=0){
     z=cast(z);
     radicand=cast(radicand);
     return z.root(radicand,branch);
-}
+}   
 function sqrtC(z,branch=0){
     z=cast(z);
     return z.sqrt(branch)
@@ -674,6 +920,57 @@ function powC(base,power,branch=0) {
     power=cast(power);
     return base.raiseTo(power,branch);
 }
+//======Trigonometric and Hyperbolic Functions for Alternate Syntax===============//
+
+function sinC(z){
+    z=cast(z);
+    return z.sin();
+}
+function cosC(z){
+    z=cast(z);
+    return z.cos();
+}
+function tanC(z){
+    z=cast(z);
+    return z.tan();
+}
+function sinhC(z){
+    z=cast(z);
+    return z.sinh();
+}
+function coshC(z){
+    z=cast(z);
+    return z.cosh();
+}
+function tanhC(z){
+    z=cast(z);
+    return z.tanh();
+}
+function asinC(z, branch=0){
+    z=cast(z);
+    return z.asin(branch);
+}
+function acosC(z, branch=0){
+    z=cast(z);
+    return z.acos(branch);
+}
+function atanC(z, branch=0){
+    z=cast(z);
+    return z.atan(branch);
+}
+function asinhC(z, branch=0){
+    z=cast(z);
+    return z.asinh(branch);
+}
+function acoshC(z, branch=0){
+    z=cast(z);
+    return z.acosh(branch);
+}
+function atanhC(z, branch=0){
+    z=cast(z);
+    return z.atanh(branch);
+}
+
 
   ///===================================================================================///
  ///=======================Functions That Work In The Complex World====================///
@@ -690,23 +987,3 @@ function linspaceC(low,high,len) {
     return arr;
 }
 
-
-function Hc(n,z){
-    if(!Number.isInteger(n)){
-        debugCall("n of the Hermite Function must be an integer.");
-        throw "Invalid value of n for Hc";}
-    z=cast(z);
-    if (isCArr(z)){return z.map((point)=>Hc(n,point));}
-    if (isComp(z)){
-        let w=new Complex(0);
-        let mMax =Math.floor(n/2)+1;
-        let m;
-        for (m of range(mMax)) {
-            let factor = ((-1)**m)/(factorial(m)*factorial(n-2*m));
-            //((2*x)**(n-2*m))
-            w = w.add( z.mult(2).raiseTo(n-2*m).mult(factor) );
-        }
-        w = w.mult(factorial(n));
-        return w;
-    } else {throw "What a strange error. This shouldn't be possible. There's a ton of errors that should happen first but, meh programming, eh?";}
-}

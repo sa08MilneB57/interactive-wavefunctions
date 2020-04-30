@@ -14,18 +14,12 @@
       width:100%;
     }
     img {
-      padding:10px;
+      padding:5px;
     }
     p {
       padding: 0;
       margin: 0;
       border: 0;
-    }
-    .imagebox{
-      text-align: center;
-    }
-    #needsApply{
-      background-color: #FAA;
     }
     #wrapper {
       height:100%;
@@ -43,23 +37,25 @@
       background-color: #88F;
       color: #002;
     }
-    #XLABEL{
-      color:Maroon;
-    }
-    #YLABEL{
-      color:DarkBlue;
-    }
-    #ZLABEL{
-      color:DarkGreen;
-    }
+    .half{width:45%;}
+    .full{width:95%;}
+    .imagebox{text-align: center;}
+    #needsApply{background-color: #FAA;}
+    #manualCoeff{background-color: #ADA;
+      margin:5px;}
+    #formulaCoeff{background-color: #8F8;
+      margin:5px;}
+    #Udiv{text-align: center;}
+    #Wdiv{text-align: center;}
+    #XLABEL{color:Maroon;}
+    #YLABEL{color:DarkBlue;}
+    #ZLABEL{color:DarkGreen;}
   </style>
   <script src="mathplus.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/p5@1.0.0/lib/p5.js"></script>
 </head>
 
 <body>
-  <script src="psimath.js"></script>
-  <script src="sketch.js"></script>
   <div id="wrapper">
     
     <div id="containment">
@@ -70,8 +66,9 @@
       <p id="YLABEL"><b>Real</b> Axis of Wavefunction</p>
       <p id="ZLABEL"><b>Imaginary</b> Axis of Wavefunction</p>
       <p>This simulation assumes ħ=1</p>
-      <p>Time Acceleration Factor:</p>
-      <input id="timeAcc" type="number" step="0.2" value="1" autocomplete="off"/>
+      <p>Time Acceleration Factor(1=RealTime):</p>
+      <input id="timeAcc" type="number" step="0.2" value="1" class="half" autocomplete="off"/>
+      <input id="timeRes" type="button" value="time=0" onClick="resetTime()"/>
       <p id="massLabel">Mass: 25</p>
       <input id="massSlider" type="range" min="0.001" max="100" value="25" step="0.001" autocomplete="off"/>
       <p id="KLabel">Spring Constant: 2</p>
@@ -81,20 +78,67 @@
         <img src="./equations/omeganought.gif" alt="omega_nought equals the squareroot of K/m"/>
       </p>
       <div id="needsApply">
-        <p>Coefficients:</p>
-        <input id="cInput" value="2i+3.1,1-2.03i,-3.2+4.21i" autocomplete="off"/>
+        <div class="half" style="float:left">
+          <p>Number of points:</p>
+          <input id="detailIn" type="number" step="1" value="301" class="full" autocomplete="off"/>
+        </div>
+        <div class="half" style="float:right">
+          <p>Length of X Axis</p>
+          <input id="xSizeIn" type="number" step="1" value="3" class="full" autocomplete="off"/>
+        </div>
         <p id="psiequation" class="imagebox">
           <img src="./equations/psi.gif" alt="psi equals the sum of coefficents multiplied by their  corresponding n-ket"/>
         </p>
-        <p>Number of points:</p>
-        <input id="detailIn" type="number" step="1" value="301" autocomplete="off"/>
-        <p>Length of X Axis</p>
-        <input id="xSizeIn" type="number" step="1" value="3" autocomplete="off"/>
-        <br/>
-        <input id="cButton" type="button" value="Apply" onClick="buttFunk()" autocomplete="off"/>
+        <div id="manualCoeff">
+          <p><input type="radio" name="coeffMode" value="manual" checked autocomplete="off"/>
+          Manually Input Coefficients:</p>
+          <input id="cInput" value="2i+3.1,1-2.03i,-3.2+4.21i" class="full" autocomplete="off"/>
+          <p>Assumes Energy Conservation.</p>
+        </div>
+        <div id="formulaCoeff">
+          <p><input type="radio" name="coeffMode" value="function" autocomplete="off"/>
+          Define <b>C</b>n=<b>f</b>(n,t,u,w)</p>
+          <p id="maxNLabel">Max value of n: 16</p>
+          <input id="maxNSlider" type="range" min="0" max="64" value="16" step="1" autocomplete="off"/>
+          <div id="Udiv" class="half" style="float:left">
+            <p id="Ulabel"><b>u</b> = 1 + 0i</p>
+            <input id="sliderURe" class="full" type="range" min="-10" max="10" value="1" step="0.1" autocomplete="off"/>
+            <input id="sliderUIm" class="full" type="range" min="-10" max="10" value="0" step="0.1" autocomplete="off"/>
+          </div>
+          <div id="Wdiv" class="half" style="float:right">    
+            <p id="Wlabel"><b>w</b> = 1 + 0i</p>
+            <input id="sliderWRe" class="full" type="range" min="-10" max="10" value="1" step="0.1" autocomplete="off"/>
+            <input id="sliderWIm" class="full" type="range" min="-10" max="10" value="0" step="0.1" autocomplete="off"/>
+          </div>
+          <p><b>f</b>(n,t,u,w)=<input id="fInput" value="exp(-((n-u)^2)/(2*w^2))" autocomplete="off"/></p>
+
+        </div>
+        <input id="cButton" type="button" value="Apply" onClick="buttFunk()"/>
+      </div>
+      <div class="advancedSettings">
+          <select id="setters" style="float:left;" class="half">
+            <option value="maxReU">Real U Slider Max</option>
+            <option value="minReU">Real U Slider Min</option>
+            <option value="maxImU">Imaginary U Slider Max</option>
+            <option value="minImU">Imaginary U Slider Min</option>
+            <option value="maxReW">Real W Slider Max</option>
+            <option value="minReW">Real W Slider Min</option>
+            <option value="maxImW">Imaginary W Slider Max</option>
+            <option value="minImW">Imaginary W Slider Min</option>
+            <option value="massMax">Mass Slider Max</option>
+            <option value="massMin">Mass Slider Min</option>
+            <option value="springMax">Spring Slider Max</option>
+            <option value="springMin">Spring Slider Min</option>
+            <option value="maxNMax">Max N Slider Max</option>
+          </select>
+        <div class="half" style="float:right;">
+          <input id="setVal" type="number" step="1" value="1" class="half" autocomplete="off"/>
+          <input id="setBut" type="button" value="Set" class="half" onClick="advSetting()"/>
+        </div>
       </div>
     </div>
   </div>
+<script src="sketch.js"></script>
 </body>
 
 </html>
