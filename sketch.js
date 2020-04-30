@@ -1,6 +1,6 @@
 'use strict'
 let can,cam,space,massLabel,massSlider,KLabel,KSlider,cInput,cButton,fInput,RPNstack,setters,advVal,
-    tempEl,timeAcc,detailIn,xSizeIn,maxN,sliderURe,sliderUIm,sliderWRe,sliderWIm,Ulabel,Wlabel;
+    tempEl,timeAcc,detailIn,xSizeIn,maxN,maxNLabel,sliderURe,sliderUIm,sliderWRe,sliderWIm,Ulabel,Wlabel;
 let t=0;
 let funkMode = "manual";
 let nSpace = linspaceC(0,16,17);
