@@ -308,6 +308,10 @@ class Complex {
     }
     sqrt(branch=0){
         if(!Number.isInteger(branch)){debugCall("Invalid Branch:",branch,"branch must be an integer.");throw "Non-Integer Branch Error";}
+        if(this.im==0&&this.re<0){
+            if (branch%2==0){return new Complex(0,Math.sqrt(this.im));}
+            else {return new Complex(0,-Math.sqrt(this.im));}
+        }
         return this.root(2,branch);
     }
     exp() {

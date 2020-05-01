@@ -1,5 +1,5 @@
 'use strict'
-let can,cam,space,massLabel,massSlider,KLabel,KSlider,cInput,cButton,fInput,RPNstack,setters,advVal,
+let can,cam,space,massLabel,massSlider,KLabel,KSlider,cInput,cButton,fInput,RPNstack,setters,advVal,pdfSlider,
     tempEl,timeAcc,detailIn,xSizeIn,maxN,maxNLabel,sliderURe,sliderUIm,sliderWRe,sliderWIm,Ulabel,Wlabel;
 let t=0;
 let funkMode = "manual";
@@ -112,6 +112,7 @@ function drawPsi(time=0){
     let i;
     for (i of range(detail)){
         push();
+        rotateX(Number(pdfSlider.value));
         translate(xscaling*xspace[i],-pdf[i],0);
         normalMaterial();
         specularMaterial("red");
@@ -223,6 +224,7 @@ function setup() {
     fInput = document.getElementById("fInput");
     setters = document.getElementById("setters");
     advVal = document.getElementById("setVal");
+    pdfSlider = document.getElementById("pdfSlider");
 }   
 
 function draw() {
@@ -246,7 +248,7 @@ function draw() {
     //updates of other variables do not, but do update variables and html
     if (maxN!=Number(maxNSlider.value)){
         maxN=Number(maxNSlider.value);
-        maxNLabel.innerHTML = "Max value of n: " + maxN;
+        maxNLabel.innerHTML = "<b>*</b>Max value of n: " + maxN;
     }
     can.background(0);
     orbitControl();

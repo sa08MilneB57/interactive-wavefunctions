@@ -69,21 +69,29 @@
       <p>Time Acceleration Factor(1=RealTime):</p>
       <input id="timeAcc" type="number" step="0.2" value="1" class="half" autocomplete="off"/>
       <input id="timeRes" type="button" value="time=0" onClick="resetTime()"/>
-      <p id="massLabel">Mass: 25</p>
-      <input id="massSlider" type="range" min="0.001" max="100" value="25" step="0.001" autocomplete="off"/>
-      <p id="KLabel">Spring Constant: 2</p>
-      <input id="KSlider" type="range" min="0.001" max="10" value="2" step="0.001" autocomplete="off"/>
+      <div class="full">
+        <p style="float:left">PDF Angle:</p>
+        <input style="float:left" id="pdfSlider" type="range" min="-3.2" max="3.2" value="0" step="0.01" autocomplete="off"/>
+      </div>
+      <div class="full">
+        <p id="massLabel">Mass: 25</p>
+        <input id="massSlider" type="range" min="0.001" max="100" value="25" step="0.001" autocomplete="off"/>
+      </div>
+      <div class="full">
+        <p id="KLabel">Spring Constant: 2</p>
+        <input id="KSlider" type="range" min="0.001" max="10" value="2" step="0.001" autocomplete="off"/>
+      </div>
       <p id="freqEq" class="imagebox">
         <img src="./equations/frequency.gif" alt="frequency equals omega_nought over 2pi"/>
         <img src="./equations/omeganought.gif" alt="omega_nought equals the squareroot of K/m"/>
       </p>
       <div id="needsApply">
         <div class="half" style="float:left">
-          <p>Number of points:</p>
+          <p>*No. of points:</p>
           <input id="detailIn" type="number" step="1" value="301" class="full" autocomplete="off"/>
         </div>
         <div class="half" style="float:right">
-          <p>Length of X Axis</p>
+          <p>*Length of X Axis</p>
           <input id="xSizeIn" type="number" step="1" value="3" class="full" autocomplete="off"/>
         </div>
         <p id="psiequation" class="imagebox">
@@ -91,14 +99,14 @@
         </p>
         <div id="manualCoeff">
           <p><input type="radio" name="coeffMode" value="manual" checked autocomplete="off"/>
-          Manually Input Coefficients:</p>
+          *Manually Input Coefficients:</p>
           <input id="cInput" value="2i+3.1,1-2.03i,-3.2+4.21i" class="full" autocomplete="off"/>
           <p>Assumes Energy Conservation.</p>
         </div>
         <div id="formulaCoeff">
           <p><input type="radio" name="coeffMode" value="function" autocomplete="off"/>
           Define <b>C</b>n=<b>f</b>(n,t,u,w)</p>
-          <p id="maxNLabel">Max value of n: 16</p>
+          <p id="maxNLabel"><b>*</b>Max value of n: 16</p>
           <input id="maxNSlider" type="range" min="0" max="64" value="16" step="1" autocomplete="off"/>
           <div id="Udiv" class="half" style="float:left">
             <p id="Ulabel"><b>u</b> = 1 + 0i</p>
@@ -110,12 +118,13 @@
             <input id="sliderWRe" class="full" type="range" min="-10" max="10" value="1" step="0.1" autocomplete="off"/>
             <input id="sliderWIm" class="full" type="range" min="-10" max="10" value="0" step="0.1" autocomplete="off"/>
           </div>
-          <p><b>f</b>(n,t,u,w)=<input id="fInput" value="exp(-((n-u)^2)/(2*w^2))" autocomplete="off"/></p>
+          <p><b>*f</b>(n,t,u,w)=<input id="fInput" value="exp(-((n-u)^2)/(2*w^2))" autocomplete="off"/></p>
 
         </div>
         <input id="cButton" type="button" value="Apply" onClick="buttFunk()"/>
+        *Needs "Apply"
       </div>
-      <div class="advancedSettings">
+      <div>
           <select id="setters" style="float:left;" class="half">
             <option value="maxReU">Real U Slider Max</option>
             <option value="minReU">Real U Slider Min</option>
