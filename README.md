@@ -9,6 +9,8 @@ Please open index.html using a service like githack or download the repository a
 Githack is the simplest as you just paste the link to the html file into the service and follow the developement link.
 Valid Mathematical Functions
 
+The suggested coeficients file contains some interesting things to type in.
+
 ## Maths parser
 As javascript does not natively handle complex numbers, in order to mitigate security issues, I had to write my own maths parser for the "define coefficients by function" mode. This uses a modified Shunting-Yard algorithm to convert to a stack of RPN then a maps various keywords on to functions that I defined for my Complex Numbers. All of the pure maths is in my mathsplus.js file. I am still working out some buggy areas around the negative real axis for anything who's definition has branches so if you get strange behaviours try using an alternaive representation.
 
