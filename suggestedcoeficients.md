@@ -10,12 +10,12 @@ Some good things to type in for coefficients that I've found. Please leave comme
 
 ## As functions
 
-- Gauss Distribution: exp(-((n-u)^2)/(2*w^2))
+- Gauss Distribution: exp(-((n-u)^2)/(2\*w^2))
   - "Re(u)" is the location of the peak in energy, changing this has the effect of more wiggliness and greater travel for higher u
   - "Re(w)" is the spread of the energy distribution, changing this demonstrates the Heisenberg uncertainty principle rather well
   - The imaginary components of these numbers don't correspond to anything useful that I'm aware of.
-- Odds and Evens: sin(n*pi/2)^2 or cos(n*pi/2)^2
+- Odds and Evens: sin(n\*pi/2)^2 or cos(n\*pi/2)^2
   - These correspond to the same values as the Odds and Evens lists.
   - You can therefore multiply these by another function to apply that function to only odd or even values of n.
-- Reciprocal: 1/(n*u+1)
+- Reciprocal: 1/(n\*u+1)
   - Corresponds to less chance of measuring higher energies while u>0
