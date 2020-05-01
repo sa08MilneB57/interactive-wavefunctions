@@ -1,6 +1,9 @@
 # Interactive Wavefunctions
 
 This is a representation of the Quantum Harmonic Oscillator that can be played with in real time. This simulation assumes ħ=1 and when defining the Cn using a formula note that each |n> evolves with time *anyway* so you do not need to include a time component in your formulae.
+
+The coefficients are automatically normalised so it does not matter what function or list of coeficients you use it will shrink them as required to make sure there is a probability of 1 that the particle is "somewhere".
+
 The |n> is the position wavefunction in the energy eigenbasis so n is 0-indexed. Please remember this when defining your Cn functions as the site will crash if you divide by 0.
 
 ## How to use 
