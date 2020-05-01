@@ -1,16 +1,24 @@
-### interactive-wavefunctions
-This simulation assumes ħ=1
+# Interactive Wavefunctions
 
-This is a representation of the Quantum Harmonic Oscillator that can be played with in real time.
+This is a representation of the Quantum Harmonic Oscillator that can be played with in real time. This simulation assumes ħ=1 and when defining the Cn using a formula note that each |n> evolves with time *anyway* so you do not need to include a time component in your formulae.
+The |n> is the position wavefunction in the energy eigenbasis so n is 0-indexed. Please remember this when defining your Cn functions as the site will crash if you divide by 0.
 
+## How to use 
 Please open index.html using a service like githack or download the repository and use it on a locally hosted server.
 
 Githack is the simplest as you just paste the link to the html file into the service and follow the developement link.
 Valid Mathematical Functions
 
+## Maths parser
+As javascript does not natively handle complex numbers, in order to mitigate security issues, I had to write my own maths parser for the "define coefficients by function" mode. This uses a modified Shunting-Yard algorithm to convert to a stack of RPN then a maps various keywords on to functions that I defined for my Complex Numbers. All of the pure maths is in my mathsplus.js file. I am still working out some buggy areas around the negative real axis for anything who's definition has branches so if you get strange behaviours try using an alternaive representation.
+
+"i" must be accompanied by a number("0.1i, i1, 2i, ipi, ei")
+
+"pi" & "e" evaluate as you'd expect but exp(z) is more accurate than e^z
+
 - a+b: add two numbers
 
-- a-b: subtraction, unary negative has variable behaviour, for safety use brackets
+- a-b: subtraction, unary negative has variable behaviour, the liberal use of brackets will keep you safe
 
 - a*b: multiplication
 
@@ -19,28 +27,24 @@ Valid Mathematical Functions
 - a^b: exponenentiation (right-assosciative)
 
 
-## Trigonometric Functions
+### Trigonometric Functions
 sin(z) cos(z) tan(z)
 
 
-## Hyperbolic Functions
+### Hyperbolic Functions
 sinh(z) cosh(z) tanh(z)
 
 
-## Inverse Trig & Hyp Functions
+### Inverse Trig & Hyp Functions
 These use the principle value.
 asin(z) acos(z) atan(z)
 asinh(z) acosh(z) atanh(z)
 
-
-## If possible use these rather than alternatives like ^
+#### If possible use these rather than alternatives like ^
 square(z) sqrt(z) exp(z) 
-
 
 ln(z) log(z,base) root(z)
 
-## Complex Number Stuff
+### Complex Number Stuff
 re(z) im(z)
 mag(z) arg(z)
-
-pi,e evaluate as you'd expect. exp(z) is more accurate than e^z
