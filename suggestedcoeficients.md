@@ -19,3 +19,4 @@ Some good things to type in for coefficients that I've found. Please leave comme
   - You can therefore multiply these by another function to apply that function to only odd or even values of n.
 - Reciprocal: 1/(n\*u+1)
   - Corresponds to less chance of measuring higher energies while u>0
+  - The opposite effect can be achieved with ln(n+1)
