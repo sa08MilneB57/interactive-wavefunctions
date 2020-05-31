@@ -45,9 +45,12 @@ These use the principle value.
 asin(z) acos(z) atan(z)
 asinh(z) acosh(z) atanh(z)
 
-#### If possible use these rather than alternatives like ^
+### Exponential Functions
+#### If possible use these three functions rather than alternatives like the "^" operator
 square(z) sqrt(z) exp(z) 
 
+### Logarithmic Functions 
+#### Rounding errors will be particularly bad around the negative real axis. All generalised exponents are based on the ln(z) function as are log() and root()
 ln(z) log(z,base) root(z)
 
 ### Complex Number Stuff
