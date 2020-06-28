@@ -79,7 +79,11 @@ function eigenstate(n){
 
 function recalculate(){
     xscaling= width/(4*Math.PI);
-    yscaling=(R*xscaling*2)/3;
+    if (R>(2*Math.PI)){
+        yscaling=(4*Math.PI*xscaling/3);
+    } else {
+        yscaling=(R*xscaling*2)/3;
+    }
     eigenStorage.length=0;
     let n;
     if (funkMode=="function"){
