@@ -1,6 +1,4 @@
 'use strict'
-
-
 //=======Variable Checkers==============//
 function isComp(arg){return arg instanceof Complex;}
 function isCArr(arg){return arg instanceof CompArr && arg.every(isComp);}
@@ -118,7 +116,7 @@ class Complex {
         this.re = a;
         this.im = b;
         } else {
-            debugCall("new Complex Failure","Real:",a,"Im:",b);
+            debugCall("new Complex Failure","Re:",a,"Im:",b);
             throw "Invalid Arguments when trying to call Complex";
         }
     }
@@ -223,11 +221,7 @@ class Complex {
     }
     arg(ascomp=true) {
         //returns the argument of this in radians
-        let ans;
-        if(this.re>=0){ans=Math.acos(this.re/this.mag(false));}
-        else{ans=-Math.acos(this.re/this.mag(false));}
-        if (ascomp){return new Complex(ans);
-        }else{return ans;}
+        return Math.atan2(this.im,this.re);
     }
     neg() {
         //returns the negative of this
@@ -243,7 +237,8 @@ class Complex {
     }
     normalise() {
         //returns a complex number with equivalent argument but magnitude 1
-        return Complex.polar(1,this.arg()); 
+        if (this.re==0 && this.im==0){return new Complex(0,0);}
+        return this.divBy(this.mag()); 
     }
     //======ARITHMETIC=========
     equals(other,within=0) {
@@ -408,6 +403,7 @@ class CompArr extends Array {
         let i;
         for (i of range(length)){Z.push(1);}
         return Z;}
+
     static repeat(value,length){
         if (isCompLike(value)){value=new Complex(value);}
         let Z = new CompArr();
@@ -563,7 +559,23 @@ class CompArr extends Array {
     //===========ARRAY-ONLY MATHS=============================//
     sum(){return this.reduce((x,y) => x.add(y));}
     product(){return this.reduce((x,y) => x.mult(y));}
+    dft(){
+        //returns the discrete fourier transform of the series
+        let N = this.length;
+        let Zhat = new CompArr();
+        let k;
+        let n;
+        for (k=0; k<N ; k++){
+            let Zk = new Complex(0);
+            for (n=0; n<N; n++){
+                let factor = Complex.polar(1,-2*Math.PI*k*n/N);
+                Zk = Zk.add(this[n].mult(factor));}
+            Zhat.push(Zk);}
+        return Zhat;
+    }
 
+
+    //Extremes, Spans and Sizes
     maxRe (ascomp=true)  {
         ans = Math.max(...this.re);
         if (ascomp){return new Complex(ans);
@@ -621,9 +633,10 @@ class CompArr extends Array {
     vecNorm() {
         //returns normalised vector
         return this.divBy(this.vecMag());}
+
 }
 
-///======================EXPRESSION PARSER====================================================================///
+///======================EXPRESSION PARSER==============================================================///
 function parseToRPN(expression,allowedVars=""){
     //Converts mathematical expressions to RPN
     //Uses slightly tweaked shunting yard algorithm to convert to a queue in
@@ -632,8 +645,8 @@ function parseToRPN(expression,allowedVars=""){
     if (/(.).*\1/.test(allowedVars)){debugCall("repeated variable names");throw "repeated variable names";}
     if (/[pie]/.test(allowedVars)){debugCall("No pie allowed.");
         throw "The letters p, i, and e are not allowed as math variables.";}
-    
-    expression=expression.replace(/\s/g,"").toLowerCase();//removes whitespace and sets lowercase
+    //removes whitespace and sets lowercase
+    expression=expression.replace(/\s/g,"").toLowerCase();
     //REPLACE "--" with "+"
     expression = expression.replace(/--/g,"+");
     //REPLACE UNARY "-" with alternate  "_"
@@ -644,7 +657,7 @@ function parseToRPN(expression,allowedVars=""){
     //This defines the valid functions
     //let validOperand = /^((([uvwte]|pi|\d+(\.\d+)?)i)|(i?([uvwte]|pi|\d+(\.\d+)?)))/;
     let validOperand = new RegExp("^(((["+ allowedVars +"e](?!xp)|pi|\\d+(\\.\\d+)?)i)|(i?(["+ allowedVars +"e](?!xp)|pi|\\d+(\\.\\d+)?)))");
-    let validFunction = /^(sin|cos|tan|sinh|cosh|tanh|asin|acos|atan|asinh|acosh|atanh|sqrt|square|exp|ln|log|root|re|im|mag|arg|conj)/;
+    let validFunction = /^(sin|cos|tan|sinh|cosh|tanh|asin|acos|atan|asinh|acosh|atanh|sqrt|square|exp|ln|log|root|re|im|mag|arg|conj|norm)/;
     let validUnaryPre = /^_/;
     let validBinary = /^[+\-*\/\^]/;
     let maxIter = expression.length;
@@ -654,7 +667,11 @@ function parseToRPN(expression,allowedVars=""){
     let curtoken,poppables;
     while (expression.length>0){
         debugCall("SoL "+iters);
-        if (validOperand.test(expression)){//if it starts with a number
+        if (validFunction.test(expression)){//if it starts with a number
+            curtoken = validFunction.exec(expression)[0];
+            opstack.push(curtoken);
+            expression = expression.replace(validFunction,"");
+        } else if (validOperand.test(expression)){//if it starts with a number
             curtoken = validOperand.exec(expression)[0];
             outqueue.push(curtoken);
             expression = expression.replace(validOperand,"");
@@ -662,10 +679,6 @@ function parseToRPN(expression,allowedVars=""){
             curtoken = validUnaryPre.exec(expression)[0];
             opstack.push(curtoken);
             expression = expression.replace(validUnaryPre,"");
-        } else if (validFunction.test(expression)){
-            curtoken = validFunction.exec(expression)[0];
-            opstack.push(curtoken);
-            expression = expression.replace(validFunction,"");
         } else if (expression[0]==","){
             curtoken = ",";
             while (opstack[opstack.length - 1]!="("){//pops until it finds a left bracket
@@ -738,7 +751,7 @@ function evalC(expression,allowedVars="",...variables){
         "square":[1,squareC],"sqrt":[1,sqrtC],"exp":[1,expC],"ln":[1,lnC],
         "log":[2,logC],"root":[2,rootC],
         "re":[1,reC],"im":[1,imC],
-        "mag":[1,magC],"arg":[1,conjC],
+        "mag":[1,magC],"arg":[1,argC],"conj":[1,conjC],"norm":[1,normaliseC],
         "pi":[0,PIc],"e":[0,Ec]};
     //this section is so you can translate to RPN once and then evaluate the expression times when variables change to minimise load
     let inQueue,tempvar1,tempvar2,curtoken;
@@ -771,7 +784,7 @@ function evalC(expression,allowedVars="",...variables){
         debugCall("EoL outStack:",outStack);
         }
     if (outStack.length!=1){debugCall("outStack length issue");throw "parsing error";}
-    return outStack[0];
+    return cast(outStack[0]);
 }
 
 

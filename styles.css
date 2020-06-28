@@ -1,0 +1,43 @@
+body{
+  background-color: navy;
+}
+
+#burger {
+  position:fixed;
+  z-index:1;
+  max-width:80px;}
+#sideclose {
+  position: fixed;
+  left:25%;
+  z-index:1;
+  display:none;
+  width:20%;
+  max-width:80px;}
+#containment{
+  z-index:-1;}
+#sidebar{
+  width:25%;
+  display:none;}
+#home{
+  margin: 0px;
+  height: 100vh;
+  background-image:url('./textures/space.jpg');
+  background-size: cover;
+  background-position: center;
+}
+#navi{
+  text-align: center;
+}
+#navibar{
+  position: sticky;
+  top:0;
+}
+.naviButt:hover{
+  font-weight: bold;
+}
+.label{
+  display:inline;
+  float:left;}
+.usrinput{
+  display:inline;
+  float:right;}

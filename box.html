@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="EN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" type="text/css" href="https://www.w3schools.com/w3css/4/w3.css">
+  <link rel="stylesheet" type="text/css" href="styles.css">
+  <title>Interactive Particle In A Box</title>
+  <script src="mathplus.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.0.0/lib/p5.js"></script>
+</head>
+
+<body>    
+  <div id="containment">
+    
+    <img id="burger" class="w3-btn w3-purple w3-card-4 w3-hover-deep-purple" src="./textures/burger.svg" width="5%" onClick="baropen()"/>
+
+    <div id="sidebar" class="w3-sidebar w3-animate-opacity w3-khaki">
+      <div id="navibar" class="w3-bar w3-khaki w3-card-4">
+        <a href="index.html" class="w3-btn w3-bar-item w3-wide w3-large w3-ripple w3-purple w3-hover-deep-purple w3-bar-item">Home</a><span class="w3-bar-item"><b>Particle In A Box</b></span>
+      </div>
+      <div class="w3-container w3-red"><b>Position</b> Arrowheads correspond to units of distance.</div>
+      <div class="w3-container w3-blue"><b>Real</b> Axis of Wavefunction</div>
+      <div class="w3-container w3-green"><b>Imaginary</b> Axis of Wavefunction</div>
+      <div>This simulation assumes ħ=1</div>
+      <div>Time Acceleration Factor(1=RealTime):
+        <input id="timeAcc" type="number" step="0.2" value="1" autocomplete="off"/>
+        <input id="timeRes" type="button" class="w3-btn w3-card-4 w3-ripple w3-round w3-purple w3-hover-deep-purple" value="time=0" onClick="resetTime()"/>
+      </div>
+      <div class="w3-container">
+        <span class="label">PDF Angle:</span>
+        <input id="pdfSlider" class="usrinput" type="range" min="-3.2" max="3.2" value="0" step="0.01" autocomplete="off"/>
+      </div>
+      <div class="w3-container">
+        <span class="label">X Scaling:</span>
+        <input id="scaleSlider" class="usrinput" type="range" min="0.5" max="5" value="1" step="0.1" autocomplete="off"/>
+      </div>
+      <div class="w3-container">
+        <span id="massLabel" class="label">Mass: 25</span>
+        <input id="massSlider" class="usrinput" type="range" min="0.001" max="100" value="25" step="0.001" autocomplete="off"/>
+      </div>
+      <div class="w3-container">
+        <span id="LLabel" class="label">Length "L": 2</span>
+        <input id="LSlider" class="usrinput" type="range" min="0.01" max="10" value="2" step="0.01" autocomplete="off"/>
+      </div>
+      <div id="freqEq" class="w3-bar">
+        <img class="w3-bar-item" src="./equations/frequency.gif" alt="frequency equals omega_nought over 2pi"/>
+        <img class="w3-bar-item" src="./equations/omeganought.gif" alt="omega_nought equals the squareroot of K/m"/>
+      </div>
+      <div class="w3-container">
+        <div class="w3-red w3-container w3-card-4">
+          <div class="w3-container">
+            <span class="label">*No. of points:</span>
+            <input id="detailIn" type="number" class="usrinput" style="width: 5em;" min="1" step="10" value="301" autocomplete="off"/>
+          </div>
+          <div id="psiequation" class="w3-bar">
+            <img class="w3-bar-item" src="./equations/psi.gif" alt="psi equals the sum of coefficents multiplied by their  corresponding n-ket"/>
+          </div>
+          <div class="w3-green w3-panel w3-card-4">
+            <div><input type="radio" name="coeffMode" value="manual" checked autocomplete="off"/>
+            *Manually Input Coefficients:</div>
+            <input id="cInput" value="2i+3.1,1-2.03i,-3.2+4.21i"  autocomplete="off"/>
+          </div>
+          <div class="w3-teal w3-panel w3-card-4">
+            <div><input type="radio" name="coeffMode" value="function" autocomplete="off"/>
+            Define <b>C</b>n=<b>f</b>(n,t,u,w)</div>
+            <div id="maxNLabel"><b>*</b>Max value of n: 16</div>
+            <input id="maxNSlider" type="range" min="0" max="64" value="16" step="1" autocomplete="off"/>
+            <div id="Udiv">
+              <div id="Ulabel"><b>u</b> = 1 + 0i</div>
+              <input id="sliderURe"  type="range" min="-10" max="10" value="1" step="0.1" autocomplete="off"/>
+              <input id="sliderUIm"  type="range" min="-10" max="10" value="0" step="0.1" autocomplete="off"/>
+            </div>
+            <div id="Wdiv">    
+              <div id="Wlabel"><b>w</b> = 1 + 0i</div>
+              <input id="sliderWRe"  type="range" min="-10" max="10" value="1" step="0.1" autocomplete="off"/>
+              <input id="sliderWIm"  type="range" min="-10" max="10" value="0" step="0.1" autocomplete="off"/>
+            </div>
+            <div><b>*f</b>(n,t,u,w)=<input id="fInput" value="exp(-((n-u)^2)/(2*w^2))" autocomplete="off"/></div>
+
+          </div>
+          <div class="w3-panel">
+            <input id="cButton" type="button" class="w3-btn w3-card-4 w3-ripple w3-round w3-khaki w3-hover-deep-orange" value="Apply" onClick="buttFunk()"/>
+            *Needs "Apply"
+          </div>
+        </div>
+      </div>
+      <div>
+        <select id="setters">
+          <option value="maxReU">Real U Slider: Max</option>
+          <option value="minReU">Real U Slider: Min</option>
+          <option value="maxImU">Imaginary U Slider: Max</option>
+          <option value="minImU">Imaginary U Slider: Min</option>
+          <option value="maxReW">Real W Slider: Max</option>
+          <option value="minReW">Real W Slider: Min</option>
+          <option value="maxImW">Imaginary W Slider: Max</option>
+          <option value="minImW">Imaginary W Slider: Min</option>
+          <option value="massMax">Mass Slider: Max</option>
+          <option value="massMin">Mass Slider: Min</option>
+          <option value="springMax">Spring Slider: Max</option>
+          <option value="springMin">Spring Slider: Min</option>
+          <option value="maxNMax">Max N Slider: Max</option>
+        </select>
+        <div>
+          <input id="setVal" type="number" step="1" value="1" autocomplete="off"/>
+          <input id="setBut" type="button" class="w3-btn w3-card-4 w3-ripple w3-round w3-purple w3-hover-deep-purple" value="Set" onClick="advSetting()"/>
+        </div>
+      </div>
+    </div>
+    <img id="sideclose" class="w3-btn w3-card-4 w3-ripple w3-purple w3-hover-deep-purple w3-bar-item" src="./textures/doublearrow.svg" onClick="barclose()"/>
+  </div>
+  <script src="boxSketch.js"></script>
+  <script>
+    function baropen() {
+      document.getElementById("sidebar").style.display = "block";
+      document.getElementById("sideclose").style.display = "block";
+    }
+
+    function barclose() {
+      document.getElementById("sidebar").style.display = "none";
+      document.getElementById("sideclose").style.display = "none";
+    }
+  </script>
+</body>
+
+</html>
