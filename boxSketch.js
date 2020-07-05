@@ -1,6 +1,6 @@
 'use strict'
 let can,cam,space,massLabel,massSlider,LLabel,LSlider,scaleSlider,cInput,cButton,fInput,RPNstack,setters,advVal,pdfSlider,
-    tempEl,timeAcc,detailIn,maxN,maxNLabel,maxNSlider,sliderURe,sliderUIm,sliderWRe,sliderWIm,Ulabel,Wlabel;
+    tempEl,timeAcc,detailIn,maxN,maxNLabel,maxNSlider,sliderURe,sliderUIm,sliderWRe,sliderWIm,Ulabel,Wlabel,standingBox;
 let t=0;//current simulation time in milliseconds (including time acceleration) (when draw Psi is called I set time to 1000th of this)
 let funkMode = "manual";//typed in or calculated coefficients
 let nSpace = linspaceC(1,16,16);//the ns
@@ -11,11 +11,12 @@ let m = 25;//mass of particle
 let L = 2;//length of box
 let coef = (CompArr.ones(16)).vecNorm();
 let xspace  = linspaceC(-L/2,L/2,detail);
-let yspace;
+let yspace, yInc, yRef;
 let pdf;
 let yscaling;//this is a variable to bump up the size of the numbers so javascript doesn't disapear them all
 let xscaling;
 let eigenStorage = [];
+let showStanding = false;
 
 function advSetting(){
     let newVal = advVal.value; 
@@ -62,16 +63,70 @@ function advSetting(){
     }
 }
 
-function eigenstate(n){
+function eigenstate(n,standing=false){
+    //standing=false means it won't return the split up version with two simultaneous momenta
+    //standing=true will only return the two opposite momenta, positive first
     //just the shape of the eigenstates, nothing time-dependant
     if ( !Number.isInteger(n) || n<1){throw "n must be an integer greater than 1";}
-    let k = n*Math.PI/L
-    if ( n%2 == 0 ){
-        //even
-        return xspace.mult(k).sin().mult(Math.sqrt(2/L)*yscaling);
+    let k = n*Math.PI/L;
+    if(standing){
+        let A = yscaling*Math.sqrt(0.5/L);//sqrt(1/2L)
+        let iA= Ic.mult(A);
+        let incident,reflected;
+        if ( n%2 == 0 ){
+            //even
+            incident  = xspace.mult(Ic.mult(k)).exp().mult(iA.neg());
+            reflected = xspace.mult(Ic.mult(-k)).exp().mult(iA);
+        } else {
+            //odd
+            incident  = xspace.mult(Ic.mult(k)).exp().mult(A);
+            reflected = xspace.mult(Ic.mult(-k)).exp().mult(A);
+        }
+        console.log(incident.add(reflected));
+        return [incident.add(reflected),incident,reflected];
     } else {
-        //odd
-        return  xspace.mult(k).cos().mult(Math.sqrt(2/L)*yscaling);
+        if ( n%2 == 0 ){
+            //even
+            return xspace.mult(k).sin().mult(Math.sqrt(2/L)*yscaling);
+        } else {
+            //odd
+            return  xspace.mult(k).cos().mult(Math.sqrt(2/L)*yscaling);
+        }
+    }
+}
+
+
+function superposition(time=0,standing=false){
+    //standing=false means it won't return the split up version with two simultaneous momenta
+    //all the time-dependant stuff needs to be in here
+    //in addition anything that can change from frame to frame
+    let psi = CompArr.zeros(detail);
+    if (standing){
+        var inc = CompArr.zeros(detail);
+        var ref = CompArr.zeros(detail);
+    }
+    if (funkMode=="function"){//this block creates a list of coefficients from the user defined function of n,u,w,t 
+        coef=evalC(RPNstack,"ntuw",nSpace,time,u,w);
+        if (isComp(coef)){coef = CompArr.repeat(coef,nSpace.length)}
+        coef=coef.vecNorm()
+    }
+    let i;
+    for (i of range(coef.length)){
+        if(ZEROc.equals(coef[i])){continue;}//skips zero coef. for more efficient rendering
+        let E = (nSpace[i].re*nSpace[i].re*Math.PI*Math.PI)/(2*m*L*L);//(n^2*pi^2)/(2mL^2)
+        let phasor=coef[i].mult(expC([0,E*time]));
+        if (standing){
+            psi = psi.add(eigenStorage[i][0].mult(phasor));
+            inc = inc.add(eigenStorage[i][1].mult(phasor));
+            ref = ref.add(eigenStorage[i][2].mult(phasor));
+        } else {
+            psi = psi.add(eigenStorage[i].mult(phasor));
+        }
+    }
+    if (standing){
+        return [psi,inc,ref];
+    } else {
+        return psi;
     }
 }
 
@@ -81,31 +136,12 @@ function recalculate(){
     eigenStorage.length=0;
     let n;
     if (funkMode=="function"){
-        for (n of range(maxN)){
-            eigenStorage.push(eigenstate(n+1));}
+        for (n of nSpace){
+            eigenStorage.push(eigenstate(n.re,showStanding));}
     } else {
-        for (n of range(coef.length)){
-            eigenStorage.push(eigenstate(n+1));}
+        for (n of nSpace){
+            eigenStorage.push(eigenstate(n.re,showStanding));}
     }
-}
-
-function superposition(time=0){
-    //all the time-dependant stuff needs to be in here
-    //in addition anything that can change from frame to frame
-    let psi = CompArr.zeros(detail)
-    if (funkMode=="function"){
-        coef=evalC(RPNstack,"ntuw",nSpace,time,u,w);
-        if (isComp(coef)){coef = CompArr.repeat(coef,nSpace.length)}
-        coef=coef.vecNorm()
-    }
-    let i;
-    for (i of range(coef.length)){
-        if(ZEROc.equals(coef[i])){continue;}//skips zero coef. for more efficient rendering
-        let E = (nSpace[i].re*nSpace[i].re*Math.PI*Math.PI)/(2*m*L*L);
-        let phasor=coef[i].mult(expC([0,E*time]));
-        psi = psi.add(eigenStorage[i].mult(phasor));
-    }
-    return psi;
 }
 
 function integralCheck(){
@@ -116,7 +152,14 @@ function integralCheck(){
 }
 
 function drawPsi(time=0){
-    yspace = superposition(time);
+    if (showStanding){
+        let psistore = superposition(time,showStanding);
+        yspace = psistore[0];
+        yInc = psistore[1];
+        yRef = psistore[2];
+    } else {
+        yspace = superposition(time,showStanding);
+    }
     pdf = yspace.divBy(yscaling).mag2().mult(yscaling);
     let i;
     for (i of range(detail)){
@@ -133,6 +176,23 @@ function drawPsi(time=0){
         specularMaterial((2*Math.PI*i)/detail,100,60);
         sphere(Math.log(100*pdf[i].re+Math.E));
         pop();
+        if (showStanding){
+            let scale = Math.log(30*pdf[i].re+Math.E);
+            push();
+            noStroke();
+            translate(xscaling*xspace[i].re,-yInc[i].re,yInc[i].im);
+            specularMaterial(0,100,60);
+            rotateZ(Math.PI/2);
+            cone(scale,2*scale,4);
+            pop();
+            push();
+            noStroke();
+            translate(xscaling*xspace[i].re,-yRef[i].re,yRef[i].im);
+            specularMaterial(Math.PI,100,60);
+            rotateZ(-Math.PI/2);
+            cone(scale,2*scale,4);
+            pop();
+        }
     }
 }
 
@@ -174,12 +234,13 @@ function axes(){
         rotateX(Math.PI/2);
         cone(10, 20, 4, 16);
     pop();
-    if (cam.eyeX<0){
+    noStroke();
+    if (cam.eyeX<0){//this switches the rendering order of the lids depending on where the camera is to make sure both are always rendered properly
         push();
         //positive cap
             translate(xscaling*L/2,0,0);
             rotateY(-Math.PI/2);
-            fill(0,100,100,50);
+            fill(0,100,50,50);
             plane(yscaling*2,yscaling*2,4,4);
         pop();
         
@@ -187,7 +248,7 @@ function axes(){
         //negativ cap
             translate(-xscaling*L/2,0,0);
             rotateY(-Math.PI/2);
-            fill(0,100,100,50);
+            fill(0,100,50,50);
             plane(yscaling*2,yscaling*2,4,4);
         pop();
     } else {
@@ -223,6 +284,7 @@ function buttFunk(){//function for when apply button pushed
     funkMode = document.querySelector('input[name="coeffMode"]:checked').value;
     if (funkMode=="manual"){
         coef=new CompArr(cInput.value.split(",")).vecNorm();
+        nSpace = linspaceC(1,coef.length,coef.length);
     } else if (funkMode=="function"){
         maxN = Number(maxNSlider.value);
         RPNstack = parseToRPN(fInput.value,"ntuw");
@@ -265,14 +327,16 @@ function setup() {
     setters = document.getElementById("setters");
     advVal = document.getElementById("setVal");
     pdfSlider = document.getElementById("pdfSlider");
+    standingBox = document.getElementById("standingBox");
 }   
 
 function draw() {
     xscaling = scaleSlider.value*width/5;
     // updates of m and L force a recalculate()
-    if ( m!=Number(massSlider.value)||L!=Number(LSlider.value) ){
+    if ( m!=Number(massSlider.value)||L!=Number(LSlider.value)||standingBox.checked!=showStanding){
         m = Number(massSlider.value);
         L = Number(LSlider.value);
+        showStanding = standingBox.checked;
         massLabel.innerHTML = "Mass: " + m;
         LLabel.innerHTML ='Length "L": ' + L;
         recalculate();}

@@ -175,6 +175,16 @@ function axes(){
         rotateX(Math.PI/2);
         cone(10, 20, 4, 16);
     pop();
+    // let i;
+    // for (i of range(floor(2*R*Math.PI))){
+    //     push();
+    //     v=cylToCart(R*xscaling,-i/R,0);
+    //     translate(v);
+    //     rotateY(-i/R+Math.PI/2);
+    //     ambientMaterial(0,100,50,10);
+    //     torus(yscaling,1,24,3);
+    //     pop();
+    // }
 }
 
 
@@ -307,9 +317,11 @@ function draw() {
     ambientLight(5);
     strokeWeight(3);
     shininess(10);
-    pointLight(0, 0, 60, 0, height/2, -height/2);
-    pointLight(0, 0, 60, 0, -height/2, height/2);
-    axes();
+    pointLight(0, 0, 60, 0, height,  height);
+    pointLight(0, 0, 60, 0, height, -height);
+    pointLight(0, 0, 60, 0, -height, height);
+    pointLight(0, 0, 60, 0, -height,-height);
     t+=Number(timeAcc.value)*deltaTime;
     drawPsi(t/1000);
+    axes();
 }
