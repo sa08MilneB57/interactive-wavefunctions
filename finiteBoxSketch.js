@@ -1,22 +1,25 @@
 'use strict'
-let can,cam,space,massLabel,massSlider,LLabel,LSlider,scaleSlider,cInput,cButton,fInput,RPNstack,setters,advVal,pdfSlider,
-    tempEl,timeAcc,detailIn,maxN,maxNLabel,maxNSlider,sliderURe,sliderUIm,sliderWRe,sliderWIm,Ulabel,Wlabel,standingBox;
+let can,cam,space,massLabel,massSlider,LLabel,LSlider,VLabel,VSlider,scaleSlider,cInput,cButton,fInput,RPNstack,setters,advVal,pdfSlider,
+    tempEl,timeAcc,detailIn,N,sliderURe,sliderUIm,sliderWRe,sliderWIm,Ulabel,Wlabel,NLabel,NLabel2;
 let t=0;//current simulation time in milliseconds (including time acceleration) (when draw Psi is called I set time to 1000th of this)
-let funkMode = "manual";//typed in or calculated coefficients
-let nSpace = linspaceC(1,16,16);//the ns
+let funkMode = "function";//typed in or calculated coefficients
+let nSpace = linspaceC(0,2,3);//the ns
 let u = new Complex(1);//user defined custom variables
 let w = new Complex(1);
 let detail = 301;//number of position points to plot
-let m = 25;//mass of particle
-let L = 2;//length of box
-let coef = (CompArr.ones(16)).vecNorm();
-let xspace  = linspaceC(-L/2,L/2,detail);
-let yspace, yInc, yRef;
+let m = 1;//mass of particle
+let L = 3;//length of box
+let V0= 1;//potential depth
+let coef = (CompArr.ones(3)).vecNorm();
+let x1,x2,x3;
+let xspace  = linspaceC(-L,L,detail);
+let yspace;
+let E;
 let pdf;
+let Vs;
 let yscaling;//this is a variable to bump up the size of the numbers so javascript doesn't disapear them all
 let xscaling;
 let eigenStorage = [];
-let showStanding = false;
 
 function advSetting(){
     let newVal = advVal.value; 
@@ -57,108 +60,138 @@ function advSetting(){
         case "lengthMin":
             LSlider.setAttribute("min",newVal);
             break;
-        case "maxNMax":
-            maxNSlider.setAttribute("max",newVal);
+        case "VMax":
+            VSlider.setAttribute("max",newVal);
+            break;
+        case "VMin":
+            VSlider.setAttribute("min",newVal);
             break;
     }
 }
 
-function eigenstate(n,standing=false){
-    //standing=false means it won't return the split up version with two simultaneous momenta
-    //standing=true will only return the two opposite momenta, positive first
+function VU(u0,accuracy=10000){
+    //computes valid airs of V and U for given u0
+    if (!(u0>0)){throw "Negative u0";}
+    let N = Math.ceil(2*u0/Math.PI);
+    let vs = new CompArr();
+    let us = new CompArr();
+    let dx=u0/(accuracy-1);
+    let vspace = linspaceC(dx,u0+dx,accuracy);
+    let Ue = vspace.mult(vspace.tan());
+    let Uo = vspace.divBy(vspace.tan()).neg();
+    let uspace;
+    for (let n of range(N)){
+        let i = Math.round( (n*Math.PI)/(dx*2) );
+        if (n%2==0){uspace = Ue;}//sets uspace based on odd vs even
+        else {uspace = Uo;}
+        if(uspace[i]>u0){throw "We missed it Capn";}//detects obviously huge values of u to prevent rounding issues in the tan function with PI
+        while (u0**2>uspace[i].re**2+vspace[i].re**2) {i+=1;}//scans along the points (v,u) until the magnitude of the vector is u0
+        i-=1;
+        vs.push(vspace[i]);
+        us.push(uspace[i]);
+    }
+    return vs;
+}
+
+function eigenstate(n,v){
     //just the shape of the eigenstates, nothing time-dependant
-    if ( !Number.isInteger(n) || n<1){throw "n must be an integer greater than 1";}
-    let k = n*Math.PI/L;
-    if(standing){
-        let A = yscaling*Math.sqrt(0.5/L);//sqrt(1/2L)
-        let iA= Ic.mult(A);
-        let incident,reflected;
-        if ( n%2 == 0 ){
+    if ( !Number.isInteger(n) || n<0){throw "n must be an integer greater than or equal to 0";}
+    let k = 2*v/L;
+    let psi1,psi2,psi3;
+    if ( n%2 == 0 ){
             //even
-            incident  = xspace.mult(Ic.mult(k)).exp().mult(iA.neg());
-            reflected = xspace.mult(Ic.mult(-k)).exp().mult(iA);
-        } else {
-            //odd
-            incident  = xspace.mult(Ic.mult(k)).exp().mult(A);
-            reflected = xspace.mult(Ic.mult(-k)).exp().mult(A);
-        }
-        return [incident.add(reflected),incident,reflected];
+            let a = k*Math.tan(v);
+            let G = yscaling*Math.exp(a*L/2)/Math.sqrt((1/a) + ((L+((Math.sin(k*L))/(L)) ) / ( 1+Math.cos(k*L))) );
+            let B = (G*Math.exp(-a*L/2))/(Math.cos(k*L/2));
+            console.log(n,a,Math.log(G),Math.log(Math.abs(B)));
+            psi1 = x1.mult(a).exp().mult(G);
+            psi2 = x2.mult(k).cos().mult(B);
+            psi3 = x3.mult(-a).exp().mult(G);
+            return psi1.concat(psi2,psi3);
     } else {
-        if ( n%2 == 0 ){
-            //even
-            return xspace.mult(k).sin().mult(Math.sqrt(2/L)*yscaling);
-        } else {
             //odd
-            return  xspace.mult(k).cos().mult(Math.sqrt(2/L)*yscaling);
-        }
+            let a = -k/Math.tan(v);
+            let G = yscaling*Math.exp(a*L/2)/Math.sqrt( (1/a) + ((L-Math.sin(2*v))/(2*Math.sin(v)*Math.sin(v))))  ;
+            let A = (-G*Math.exp(-a*L/2))/(Math.sin(k*L/2));
+            console.log(n,a,Math.log(G),Math.log(Math.abs(A)));
+            psi1 = x1.mult(a).exp().mult(G);
+            psi2 = x2.mult(k).sin().mult(A);
+            psi3 = x3.mult(-a).exp().mult(-G);
+            return  psi1.concat(psi2,psi3);
     }
 }
 
 
-function superposition(time=0,standing=false){
-    //standing=false means it won't return the split up version with two simultaneous momenta
+function superposition(time=0){
     //all the time-dependant stuff needs to be in here
     //in addition anything that can change from frame to frame
     let psi = CompArr.zeros(detail);
-    if (standing){
-        var inc = CompArr.zeros(detail);
-        var ref = CompArr.zeros(detail);
-    }
     if (funkMode=="function"){//this block creates a list of coefficients from the user defined function of n,u,w,t 
         coef=evalC(RPNstack,"ntuw",nSpace,time,u,w);
-        if (isComp(coef)){coef = CompArr.repeat(coef,nSpace.length)}
-        coef=coef.vecNorm()
+        if (isComp(coef)){coef = CompArr.repeat(coef,nSpace.length);}
+        coef=coef.vecNorm();
     }
     let i;
     for (i of range(coef.length)){
         if(ZEROc.equals(coef[i])){continue;}//skips zero coef. for more efficient rendering
-        let E = (nSpace[i].re*nSpace[i].re*Math.PI*Math.PI)/(2*m*L*L);//(n^2*pi^2)/(2mL^2)
-        let phasor=coef[i].mult(expC([0,E*time]));
-        if (standing){
-            psi = psi.add(eigenStorage[i][0].mult(phasor));
-            inc = inc.add(eigenStorage[i][1].mult(phasor));
-            ref = ref.add(eigenStorage[i][2].mult(phasor));
-        } else {
-            psi = psi.add(eigenStorage[i].mult(phasor));
-        }
+        let phasor=coef[i].mult(expC([0,E[i].re*time]));
+        psi = psi.add(eigenStorage[i].mult(phasor));
     }
-    if (standing){
-        return [psi,inc,ref];
-    } else {
-        return psi;
-    }
+    return psi;
+    
 }
 
 function recalculate(){
-    xspace  = linspaceC(-L/2,L/2,detail);
+    xspace  = linspaceC(-L,L,detail);
+    let quarter=Math.floor(detail/4);
+    x1 = xspace.slice(0,quarter);
+    x2 = xspace.slice(quarter,detail-quarter);
+    x3 = xspace.slice(detail-quarter,detail);
     yscaling=(Math.sqrt(L)*height/4);
     eigenStorage.length=0;
+    let U0=Math.sqrt(m*V0/2)*L;
+    Vs = VU(U0);
+    E = Vs.square().mult(2/(L*L*m));
+    N = Vs.length;
+    if (N==1){nSpace=new CompArr(new Complex(0));}
+    else {nSpace = linspaceC(0,N-1,N);}
+    NLabel.innerHTML = "<b>*</b>Manually Input Coefficients: (Up to " + N + ")";
+    NLabel2.innerHTML = "n&lt;"+N;
+    funkMode = document.querySelector('input[name="coeffMode"]:checked').value;
+    if (funkMode=="manual"){
+        coef=new CompArr(cInput.value.split(","));
+        if (coef.length < nSpace.length){
+            coef.concat(CompArr.zeros(nSpace.length-coef.length));//adds zeros if there aren't enough user-supplied
+        } else if (coef.length>nSpace.length){
+            coef.length=nSpace.length;//cuts off extra coeficients supplied by user
+        }
+        coef = coef.vecNorm();
+    } else if (funkMode=="function"){
+        RPNstack = parseToRPN(fInput.value,"ntuw");
+    } else {throw "Massive radio button problem. Should be unreachable.";}
+
+    console.log("=====================================================");
     let n;
-    if (funkMode=="function"){
-        for (n of nSpace){
-            eigenStorage.push(eigenstate(n.re,showStanding));}
-    } else {
-        for (n of nSpace){
-            eigenStorage.push(eigenstate(n.re,showStanding));}
+    for (n of nSpace){
+        eigenStorage.push(eigenstate(n.re,Vs[n.re].re));
     }
 }
 
 function integralCheck(){
     //this is a test: it outputs the probability that the particle is "somewhere" should be close to 1
-    let dx = L/detail;
+    let dx = 2*L/detail;
     let ys = yspace.divBy(yscaling).mag2();//returns the true pdf of the wavefunction as CompArr()
-    return ys.sum().mult(2).sub( ys[0].add(ys[ys.length-1]) ).mult(dx/2);//Performs trapezoidal integration
+    let P = ys.sum().mult(2).sub( ys[0].add(ys[ys.length-1]) ).mult(dx/2).re;
+    let ps = [];
+    let state;
+    for (state of eigenStorage){
+        ps.push(state.divBy(yscaling).mag2().sum().mult(2).sub(state[0].add(state[state.length-1])).mult(L/detail).re);
+    }
+    return [P,ps];//Performs trapezoidal integration
 }
 
 function drawPsi(time=0){
-    if (showStanding){
-        let psistore = superposition(time,showStanding);
-        yspace = psistore[0];
-        yInc = psistore[1];
-        yRef = psistore[2];
-    } else {
-        yspace = superposition(time,showStanding);
-    }
+    yspace = superposition(time);
     pdf = yspace.divBy(yscaling).mag2().mult(yscaling);
     let i;
     for (i of range(detail)){
@@ -175,23 +208,6 @@ function drawPsi(time=0){
         specularMaterial((2*Math.PI*i)/detail,100,60);
         sphere(Math.log(100*pdf[i].re+Math.E));
         pop();
-        if (showStanding){
-            let scale = Math.log(30*pdf[i].re+Math.E);
-            push();
-            noStroke();
-            translate(xscaling*xspace[i].re,-yInc[i].re,yInc[i].im);
-            specularMaterial(0,100,60);
-            rotateZ(Math.PI/2);
-            cone(scale,2*scale,4);
-            pop();
-            push();
-            noStroke();
-            translate(xscaling*xspace[i].re,-yRef[i].re,yRef[i].im);
-            specularMaterial(Math.PI,100,60);
-            rotateZ(-Math.PI/2);
-            cone(scale,2*scale,4);
-            pop();
-        }
     }
 }
 
@@ -201,11 +217,11 @@ function axes(){
     push();
     //position axis
         stroke("red");beginShape();
-        vertex(-xscaling*L/2,0,0);
-        vertex(xscaling*L/2,0,0);
+        vertex(-xscaling*L,0,0);
+        vertex(xscaling*L,0,0);
         endShape();
         let i;
-        for (i of range(floor(L/2))){
+        for (i of range(floor(L))){
             translate(xscaling,0,0);
             push();
             rotateZ(-Math.PI/2);
@@ -240,7 +256,7 @@ function axes(){
             translate(xscaling*L/2,0,0);
             rotateY(-Math.PI/2);
             fill(0,100,50,50);
-            plane(yscaling*2,yscaling*2,4,4);
+            plane(yscaling*Math.log(V0+Math.E),yscaling*Math.log(V0+Math.E),4,4);
         pop();
         
         push();
@@ -248,7 +264,7 @@ function axes(){
             translate(-xscaling*L/2,0,0);
             rotateY(-Math.PI/2);
             fill(0,100,50,50);
-            plane(yscaling*2,yscaling*2,4,4);
+            plane(yscaling*Math.log(V0+Math.E),yscaling*Math.log(V0+Math.E),4,4);
         pop();
     } else {
         push();
@@ -256,14 +272,14 @@ function axes(){
             translate(-xscaling*L/2,0,0);
             rotateY(-Math.PI/2);
             fill(0,100,50,50);
-            plane(yscaling*2,yscaling*2,4,4);
+            plane(yscaling*Math.log(V0+Math.E),yscaling*Math.log(V0+Math.E),4,4);
         pop();
         push();
         //positive cap
             translate(xscaling*L/2,0,0);
             rotateY(-Math.PI/2);
             fill(0,100,50,50);
-            plane(yscaling*2,yscaling*2,4,4);
+            plane(yscaling*Math.log(V0+Math.E),yscaling*Math.log(V0+Math.E),4,4);
         pop();
     }
 }
@@ -280,15 +296,6 @@ function keyPressed() {
 
 function buttFunk(){//function for when apply button pushed
     detail = Number(detailIn.value);
-    funkMode = document.querySelector('input[name="coeffMode"]:checked').value;
-    if (funkMode=="manual"){
-        coef=new CompArr(cInput.value.split(",")).vecNorm();
-        nSpace = linspaceC(1,coef.length,coef.length);
-    } else if (funkMode=="function"){
-        maxN = Number(maxNSlider.value);
-        RPNstack = parseToRPN(fInput.value,"ntuw");
-        nSpace = linspaceC(1,maxN,maxN);
-    } else {throw "Massive radio button problem. Should be unreachable.";}
     recalculate();}
 
 
@@ -303,18 +310,19 @@ function setup() {
     can.parent('containment');
     cam = createCamera();
     frameRate(10);
-    let i;
+    NLabel = document.getElementById("upToN");
+    NLabel2 = document.getElementById("lastN");
     timeAcc = document.getElementById("timeAcc");
     massLabel = document.getElementById("massLabel");
     massSlider = document.getElementById("massSlider");
     LLabel = document.getElementById("LLabel");
     LSlider = document.getElementById("LSlider");
+    VLabel = document.getElementById("VLabel");
+    VSlider = document.getElementById("VSlider");
     cInput = document.getElementById("cInput");
     cButton = document.getElementById("cButton");
     detailIn = document.getElementById("detailIn");
     scaleSlider = document.getElementById("scaleSlider");
-    maxNLabel = document.getElementById("maxNLabel");
-    maxNSlider = document.getElementById("maxNSlider");
     Ulabel = document.getElementById("Ulabel");
     Wlabel = document.getElementById("Wlabel");
     sliderURe = document.getElementById("sliderURe");
@@ -325,19 +333,19 @@ function setup() {
     setters = document.getElementById("setters");
     advVal = document.getElementById("setVal");
     pdfSlider = document.getElementById("pdfSlider");
-    standingBox = document.getElementById("standingBox");
     recalculate();
 }   
 
 function draw() {
     xscaling = scaleSlider.value*width/5;
     // updates of m and L force a recalculate()
-    if ( m!=Number(massSlider.value)||L!=Number(LSlider.value)||standingBox.checked!=showStanding){
+    if ( m!=Number(massSlider.value)||L!=Number(LSlider.value)||V0!=Number(VSlider.value)){
         m = Number(massSlider.value);
         L = Number(LSlider.value);
-        showStanding = standingBox.checked;
+        V0= Number(VSlider.value);
         massLabel.innerHTML = "Mass: " + m;
         LLabel.innerHTML ='Length "L": ' + L;
+        VLabel.innerHTML ='Potential "V&#8320;": ' + V0;
         recalculate();}
     let eyeZ = ((height/2.0) / Math.tan(Math.PI*60.0/360.0));
     let skyboxScale = 5*L/3;
@@ -354,10 +362,6 @@ function draw() {
         Wlabel.innerHTML = "<b>w</b> = " + w.toString();
     }
     //updates of other variables do not, but do update variables and html
-    if (maxN!=Number(maxNSlider.value)){
-        maxN=Number(maxNSlider.value);
-        maxNLabel.innerHTML = "<b>*</b>Max value of n: " + maxN;
-    }
     can.background(0);
     if(!document.getElementById("sidebar").matches(":hover")){
         orbitControl();

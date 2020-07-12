@@ -209,7 +209,6 @@ function setup() {
     cam = createCamera();
     frameRate(10);
     let i;
-    recalculate();
     timeAcc = document.getElementById("timeAcc");
     massLabel = document.getElementById("massLabel");
     massSlider = document.getElementById("massSlider");
@@ -231,6 +230,7 @@ function setup() {
     setters = document.getElementById("setters");
     advVal = document.getElementById("setVal");
     pdfSlider = document.getElementById("pdfSlider");
+    recalculate();
 }   
 
 function draw() {

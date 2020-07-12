@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" type="text/css" href="https://www.w3schools.com/w3css/4/w3.css">
   <link rel="stylesheet" type="text/css" href="styles.css">
-  <title>Interactive Particle In A Box</title>
+  <title>Interactive Particle In A Finite Square Potential</title>
   <script src="mathplus.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/p5@1.0.0/lib/p5.js"></script>
 </head>
@@ -18,7 +18,7 @@
 
     <div id="sidebar" class="w3-sidebar w3-animate-opacity w3-khaki">
       <div id="navibar" class="w3-bar w3-khaki w3-card-4">
-        <a href="index.html" class="w3-btn w3-bar-item w3-wide w3-large w3-ripple w3-purple w3-hover-deep-purple w3-bar-item">Home</a><span class="w3-bar-item"><b>Particle In A Box</b></span>
+        <a href="index.html" class="w3-btn w3-bar-item w3-wide w3-large w3-ripple w3-purple w3-hover-deep-purple w3-bar-item">Home</a><span class="w3-bar-item"><b>Particle In A Finite Square Potential</b></span>
       </div>
       <div class="w3-container w3-red"><b>Position</b> Arrowheads correspond to units of distance.</div>
       <div class="w3-container w3-blue"><b>Real</b> Axis of Wavefunction</div>
@@ -34,15 +34,19 @@
       </div>
       <div class="w3-container">
         <span class="label">X Scaling:</span>
-        <input id="scaleSlider" class="usrinput" type="range" min="0.5" max="5" value="1" step="0.1" autocomplete="off"/>
+        <input id="scaleSlider" class="usrinput" type="range" min="0.5" max="5" value="1" step="0.01" autocomplete="off"/>
       </div>
       <div class="w3-container">
-        <span id="massLabel" class="label">Mass: 25</span>
-        <input id="massSlider" class="usrinput" type="range" min="0.001" max="100" value="25" step="0.001" autocomplete="off"/>
+        <span id="massLabel" class="label">Mass: 1</span>
+        <input id="massSlider" class="usrinput" type="range" min="0.4" max="10" value="1" step="0.01" autocomplete="off"/>
       </div>
       <div class="w3-container">
-        <span id="LLabel" class="label">Length "L": 2</span>
-        <input id="LSlider" class="usrinput" type="range" min="0.01" max="10" value="2" step="0.01" autocomplete="off"/>
+        <span id="LLabel" class="label">Length "L": 3</span>
+        <input id="LSlider" class="usrinput" type="range" min="0.4" max="5" value="3" step="0.01" autocomplete="off"/>
+      </div>
+      <div class="w3-container">
+        <span id="VLabel" class="label">Potential "V&#8320;": 1</span>
+        <input id="VSlider" class="usrinput" type="range" min="0.4" max="5" value="1" step="0.01" autocomplete="off"/>
       </div>
       <div class="w3-container">
         <div class="w3-red w3-container w3-card-4">
@@ -53,20 +57,15 @@
           <div id="psiequation" class="w3-bar">
             <img class="w3-bar-item" src="./equations/psi.gif" alt="psi equals the sum of coefficents multiplied by their  corresponding n-ket"/>
           </div>
-          <div class="w3-container">
-            <span class="label">Represent as Reflection:</span>
-            <input id="standingBox" type="checkbox" autocomplete="off"/>
-          </div>
           <div class="w3-green w3-panel w3-card-4">
-            <div><input type="radio" name="coeffMode" value="manual" checked autocomplete="off"/>
-            *Manually Input Coefficients:</div>
-            <input id="cInput" value="2i+3.1,1-2.03i,-3.2+4.21i"  autocomplete="off"/>
+            <div><input type="radio" name="coeffMode" value="manual" autocomplete="off"/>
+            <span id="upToN"><b>*</b>Manually Input Coefficients: (Up to N)</span></div>
+            <input id="cInput" value="1,1,1"  autocomplete="off"/>
           </div>
           <div class="w3-teal w3-panel w3-card-4">
-            <div><input type="radio" name="coeffMode" value="function" autocomplete="off"/>
+            <div><input type="radio" name="coeffMode" value="function" checked autocomplete="off"/>
             Define <b>C</b>n=<b>f</b>(n,t,u,w)</div>
-            <div id="maxNLabel"><b>*</b>Max value of n: 16</div>
-            <input id="maxNSlider" type="range" min="0" max="64" value="16" step="1" autocomplete="off"/>
+            <div id="lastN">n&lt;N</div>
             <div id="Udiv">
               <div id="Ulabel"><b>u</b> = 1 + 0i</div>
               <input id="sliderURe"  type="range" min="-10" max="10" value="1" step="0.1" autocomplete="off"/>
@@ -98,7 +97,8 @@
           <option value="minImW">Imaginary W Slider: Min</option>
           <option value="massMax">Mass Slider: Max</option>
           <option value="massMin">Mass Slider: Min</option>
-          <option value="maxNMax">Max N Slider: Max</option>
+          <option value="VMax">V0 Slider: Max</option>
+          <option value="VMin">V0 Slider: Min</option>
           <option value="lengthMax">Length Slider: Max</option>
           <option value="lengthMin">Length Slider: Min</option>
         </select>
@@ -110,7 +110,7 @@
     </div>
     <img id="sideclose" class="w3-btn w3-card-4 w3-ripple w3-purple w3-hover-deep-purple w3-bar-item" src="./textures/doublearrow.svg" onClick="barclose()"/>
   </div>
-  <script src="boxSketch.js"></script>
+  <script src="finiteBoxSketch.js"></script>
   <script>
     function baropen() {
       document.getElementById("sidebar").style.display = "block";

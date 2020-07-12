@@ -343,18 +343,28 @@ class Complex {
     }
     //===========Trigonometric Functions==================
     sin(){
+        if (this.im==0){return new Complex(Math.sin(this.re));}
         let i = new Complex(0,1);
         return this.mult(i).exp().sub(this.mult(i.neg()).exp()).divBy(i.mult(2));
     }
     cos(){
+        if (this.im==0){return new Complex(Math.cos(this.re));}
         let i = new Complex(0,1);
         return this.mult(i).exp().add(this.mult(i.neg()).exp()).divBy(2);
     }
-    tan(){return this.sin().divBy(this.cos());}
+    tan(){
+        if (this.im==0){return new Complex(Math.tan(this.re));}
+        return this.sin().divBy(this.cos());}
 
-    sinh(){return this.exp().sub(this.neg().exp()).divBy(2);}
-    cosh(){return this.exp().add(this.neg().exp()).divBy(2);}
-    tanh(){return this.sinh().divBy(this.cosh());}
+    sinh(){
+        if (this.im==0){return new Complex(Math.sinh(this.re));}
+        return this.exp().sub(this.neg().exp()).divBy(2);}
+    cosh(){
+        if (this.im==0){return new Complex(Math.cosh(this.re));}
+        return this.exp().add(this.neg().exp()).divBy(2);}
+    tanh(){
+        if (this.im==0){return new Complex(Math.tanh(this.re));}
+        return this.sinh().divBy(this.cosh());}
     asin(branch=0){
         let i = new Complex(0,1);
         return this.square().neg().add(1).sqrt(branch).add(this.mult(i)).ln(branch).mult(i.neg());}
@@ -444,7 +454,7 @@ class CompArr extends Array {
         let len = arrays.length;
         for (i=0; i<len ; i++){//loop through items
             if (!isCArr(arrays[i])){//check if current item is a complex number
-                arrays[i] = new CompArr(arrays[i]);//if not, casts to complex
+                arrays[i] = new CompArr(arrays[i]);//if not, casts to complex array
             }
         }
         return super.concat(...arrays);
@@ -803,10 +813,8 @@ function cast(z){
     //casts strings,numbers, and length 2 arrays of numbers to Complex
     //casts arrays of any other length to CompArr
     if (isCompLike(z) ){
-        debugCall("was complike");
         z = new Complex(z);
     } else if (isArr(z)){
-        debugCall("was array");
         z=new CompArr(z);
     } else if ( (!isComp(z))&&(!isCArr(z)) ){
         debugCall("Problem Casting z:",z);
