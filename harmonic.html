@@ -18,27 +18,39 @@
 
     <div id="sidebar" class="w3-sidebar w3-animate-opacity w3-khaki">
       <div id="navibar" class="w3-bar w3-khaki w3-card-4">
-        <a href="index.html" class="w3-btn w3-bar-item w3-wide w3-large w3-ripple w3-purple w3-hover-deep-purple w3-bar-item">Home</a><span class="w3-bar-item"><b>Harmonic Well</b></span>
+        <a href="index.html" class="w3-btn w3-bar-item w3-wide w3-large w3-ripple w3-purple w3-hover-deep-purple w3-bar-item">Home</a>
+        <span class="w3-bar-item"><b>Harmonic Well</b>
+        <input type="button" class="helpButton w3-card-2 w3-ripple w3-round w3-purple w3-hover-deep-purple" value="?" onClick="helpopen('Introduction')"/>
+        </span>
       </div>
       <div class="w3-container w3-red"><b>Position</b> Arrowheads correspond to units of distance.</div>
-      <div class="w3-container w3-blue"><b>Real</b> Axis of Wavefunction</div>
-      <div class="w3-container w3-green"><b>Imaginary</b> Axis of Wavefunction</div>
-      <div>This simulation assumes ħ=1</div>
-      <div>Time Acceleration Factor(1=RealTime):
-        <input id="timeAcc" type="number" step="0.2" value="1" autocomplete="off"/>
+      <div class="w3-container w3-blue"><b>Real</b> Axis of Wavefunction
+              <input type="button" class="helpButton w3-card-2 w3-ripple w3-round w3-aqua w3-hover-blue" value="?" onClick="helpopen('Wavefunctions')"/></div>
+      <div class="w3-container w3-green"><b>Imaginary</b> Axis of Wavefunction<input type="button" class="helpButton w3-card-2 w3-ripple w3-round w3-aqua w3-hover-blue" value="?" onClick="helpopen('Complex')"/></div>
+      <div class="w3-container w3-orange"><input id="showMOM" type="checkbox" autocomplete="off"/><b>Momentum</b> Display Momentum Wavefunction<input type="button" class="helpButton w3-card-2 w3-ripple w3-round w3-aqua w3-hover-blue" value="?" onClick="helpopen('momentum')"/></div>
+      <div class="w3-container">Play Speed(1=RealTime):</br>
+        <input id="timeAcc" type="number" step="0.2" value="1" autocomplete="off" style="width:4em"/>
         <input id="timeRes" type="button" class="w3-btn w3-card-4 w3-ripple w3-round w3-purple w3-hover-deep-purple" value="time=0" onClick="resetTime()"/>
       </div>
       <div class="w3-container">
-        <span class="label">PDF Angle:</span>
-        <input id="pdfSlider" class="usrinput" type="range" min="-3.2" max="3.2" value="0" step="0.01" autocomplete="off"/>
+        <span class="label">X Scaling:</span>
+        <input id="scaleSlider" class="usrinput" type="range" min="0.1" max="2" value="1" step="0.1" autocomplete="off"/>
       </div>
       <div class="w3-container">
-        <span id="massLabel" class="label">Mass: 25</span>
-        <input id="massSlider" class="usrinput" type="range" min="0.001" max="100" value="25" step="0.001" autocomplete="off"/>
+        <span class="label">Y Scaling:</span>
+        <input id="yScaleSlider" class="usrinput" type="range" min="0.5" max="2" value="1" step="0.1" autocomplete="off"/>
       </div>
       <div class="w3-container">
-        <span id="KLabel" class="label">Spring "K": 2</span>
-        <input id="KSlider" class="usrinput" type="range" min="0.001" max="10" value="2" step="0.001" autocomplete="off"/>
+        <span id="LLabel" class="label">Length of X Axis: 5</span>
+        <input id="xSizeIn" type="range" class="usrinput" min="1" step="0.1" value="5" max="10" autocomplete="off"/>
+      </div>
+      <div class="w3-container">
+        <span id="massLabel" class="label">Mass: 3</span>
+        <input id="massSlider" class="usrinput" type="range" min="0.1" max="30" value="3" step="0.1" autocomplete="off"/>
+      </div>
+      <div class="w3-container">
+        <span id="KLabel" class="label">Spring "K": 6</span>
+        <input id="KSlider" class="usrinput" type="range" min="0.1" max="20" value="6" step="0.1" autocomplete="off"/>
       </div>
       <div id="freqEq" class="w3-bar">
         <img class="w3-bar-item" src="./equations/frequency.gif" alt="frequency equals omega_nought over 2pi"/>
@@ -48,23 +60,21 @@
         <div class="w3-red w3-container w3-card-4">
           <div class="w3-container">
             <span class="label">*No. of points:</span>
-            <input id="detailIn" type="number" class="usrinput" style="width: 5em;" min="1" step="10" value="301" autocomplete="off"/>
+            <input id="detailIn" type="number" class="usrinput" style="width: 5em;" min="1" step="10" value="256" autocomplete="off"/>
           </div>
-          <div class="w3-container">
-            <span class="label">*Length of X Axis</span>
-            <input id="xSizeIn" type="number" class="usrinput" style="width: 5em;" min="1" step="1" value="3" autocomplete="off"/>
-          </div>
-          <div id="psiequation" class="w3-bar">
+          <div id="psiequation" class="w3-bar w3-panel w3-small w3-deep-orange w3-card-4 w3-round-large">
             <img class="w3-bar-item" src="./equations/psi.gif" alt="psi equals the sum of coefficents multiplied by their  corresponding n-ket"/>
+            <input type="button" class="helpButton w3-card-2 w3-ripple w3-round w3-aqua w3-hover-blue" value="?-n" onClick="helpopen('QuantumNumbers')"/>
+            <input type="button" class="helpButton w3-card-2 w3-ripple w3-round w3-aqua w3-hover-blue" value="?-c" onClick="helpopen('Coefficients')"/>
           </div>
           <div class="w3-green w3-panel w3-card-4">
             <div><input type="radio" name="coeffMode" value="manual" checked autocomplete="off"/>
-            *Manually Input Coefficients:</div>
-            <input id="cInput" value="2i+3.1,1-2.03i,-3.2+4.21i"  autocomplete="off"/>
+            *Manually Input Coefficients:<input type="button" class="helpButton w3-card-2 w3-ripple w3-round w3-aqua w3-hover-blue" value="?" onClick="helpopen('Manual','QHO')"/></div>
+            <input id="cInput" value="1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1"  autocomplete="off"/>
           </div>
           <div class="w3-teal w3-panel w3-card-4">
             <div><input type="radio" name="coeffMode" value="function" autocomplete="off"/>
-            Define <b>C</b>n=<b>f</b>(n,t,u,w)</div>
+            Define <b>C</b>n=<b>f</b>(n,t,u,w)<input type="button" class="helpButton w3-card-2 w3-ripple w3-round w3-aqua w3-hover-blue" value="?" onClick="helpopen('FunkMode')"/></div>
             <div id="maxNLabel"><b>*</b>Max value of n: 16</div>
             <input id="maxNSlider" type="range" min="0" max="64" value="16" step="1" autocomplete="off"/>
             <div id="Udiv">
@@ -110,18 +120,19 @@
     </div>
     <img id="sideclose" class="w3-btn w3-card-4 w3-ripple w3-purple w3-hover-deep-purple w3-bar-item" src="./textures/doublearrow.svg" onClick="barclose()"/>
   </div>
+  <div id="helpPanelIntroduction" style="display:none" class="help-panel w3-panel w3-card-4 w3-blue w3-display-middle w3-display-container">
+    <h3>Help- "Harmonic Well"</h3>
+    <p>This quantum system can be thought of as a quantum analogue to a pendulum or a spring.</p>
+    <p>In all the simulations on this site, the particle we are looking at is only allowed to move in one dimension which is represented by the Red axis. Left/Right</p>
+    <p>The reason it is called the "harmonic" potential is because its the basis for systems with resonant frequencies. If you drive a spring at the correct frequency, you get more energy out and pendulums have a specific frequency they swing at, hence their famous use in clocks. The further away from the middle, or "equilibrium", the particle wants to go, the more energy it needs to put in to go further.</p>
+    <p>The specific equation is E=Kx&#xb2;&#247;2 :x=position; E=energy</p>
+    <p>The number K is called the spring constant, because it corresponds to the strength of a spring's restoring force. If you increase this number you should notice the particle becoming more confined to the middle.</p>
+    <p>See Also: Simple Harmonic Motion, Hooke's Law</p>
+    <input id="helpClose" type="button" class="w3-btn w3-card-4 w3-ripple w3-display-topright w3-purple w3-hover-deep-purple" value="X" onClick="helpclose('Introduction')"/>
+  </div>
+  
   <script src="harmonicSketch.js"></script>
-  <script>
-    function baropen() {
-      document.getElementById("sidebar").style.display = "block";
-      document.getElementById("sideclose").style.display = "block";
-    }
-
-    function barclose() {
-      document.getElementById("sidebar").style.display = "none";
-      document.getElementById("sideclose").style.display = "none";
-    }
-  </script>
+  <script src="panels.js"></script>
 </body>
 
 </html>

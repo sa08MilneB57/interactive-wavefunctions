@@ -1,19 +1,21 @@
 'use strict'
-let can,cam,space,massLabel,massSlider,LLabel,LSlider,VLabel,VSlider,scaleSlider,cInput,cButton,fInput,RPNstack,setters,advVal,pdfSlider,
-    tempEl,timeAcc,detailIn,N,sliderURe,sliderUIm,sliderWRe,sliderWIm,Ulabel,Wlabel,NLabel,NLabel2;
+let can,cam,space,massLabel,massSlider,LLabel,LSlider,VLabel,VSlider,scaleSlider,yScaleSlider,cInput,cButton,fInput,RPNstack,setters,advVal,tempEl,timeAcc,detailIn,N,sliderURe,sliderUIm,sliderWRe,sliderWIm,Ulabel,Wlabel,NLabel,NLabel2,phi,pDomainSize,pspace,momPDF,showMomBox;
 let t=0;//current simulation time in milliseconds (including time acceleration) (when draw Psi is called I set time to 1000th of this)
 let funkMode = "function";//typed in or calculated coefficients
+let barrWidth = 0.1;
 let nSpace = linspaceC(0,2,3);//the ns
+let showMomentum=false;
 let u = new Complex(1);//user defined custom variables
 let w = new Complex(1);
-let detail = 301;//number of position points to plot
-let m = 1;//mass of particle
-let L = 3;//length of box
-let V0= 1;//potential depth
+let detail = 256;//number of position points to plot
+let m = 3;//mass of particle
+let L = 6;//length of box
+let V0= 3;//potential depth
 let coef = (CompArr.ones(3)).vecNorm();
 let x1,x2,x3;
 let xspace  = linspaceC(-L,L,detail);
 let yspace;
+let yScaler=1;
 let E;
 let pdf;
 let Vs;
@@ -73,6 +75,7 @@ function VU(u0,accuracy=10000){
     //computes valid airs of V and U for given u0
     if (!(u0>0)){throw "Negative u0";}
     let N = Math.ceil(2*u0/Math.PI);
+    if (N>64){N=64;}//caps N at 64
     let vs = new CompArr();
     let us = new CompArr();
     let dx=u0/(accuracy-1);
@@ -103,7 +106,6 @@ function eigenstate(n,v){
             let a = k*Math.tan(v);
             let G = yscaling*Math.exp(a*L/2)/Math.sqrt((1/a) + ((L+((Math.sin(k*L))/(L)) ) / ( 1+Math.cos(k*L))) );
             let B = (G*Math.exp(-a*L/2))/(Math.cos(k*L/2));
-            console.log(n,a,Math.log(G),Math.log(Math.abs(B)));
             psi1 = x1.mult(a).exp().mult(G);
             psi2 = x2.mult(k).cos().mult(B);
             psi3 = x3.mult(-a).exp().mult(G);
@@ -113,7 +115,6 @@ function eigenstate(n,v){
             let a = -k/Math.tan(v);
             let G = yscaling*Math.exp(a*L/2)/Math.sqrt( (1/a) + ((L-Math.sin(2*v))/(2*Math.sin(v)*Math.sin(v))))  ;
             let A = (-G*Math.exp(-a*L/2))/(Math.sin(k*L/2));
-            console.log(n,a,Math.log(G),Math.log(Math.abs(A)));
             psi1 = x1.mult(a).exp().mult(G);
             psi2 = x2.mult(k).sin().mult(A);
             psi3 = x3.mult(-a).exp().mult(-G);
@@ -143,11 +144,12 @@ function superposition(time=0){
 
 function recalculate(){
     xspace  = linspaceC(-L,L,detail);
+    yScaler = Number(yScaleSlider.value);
+    yscaling= yScaler*height/6;
     let quarter=Math.floor(detail/4);
     x1 = xspace.slice(0,quarter);
     x2 = xspace.slice(quarter,detail-quarter);
     x3 = xspace.slice(detail-quarter,detail);
-    yscaling=(Math.sqrt(L)*height/4);
     eigenStorage.length=0;
     let U0=Math.sqrt(m*V0/2)*L;
     Vs = VU(U0);
@@ -170,24 +172,23 @@ function recalculate(){
         RPNstack = parseToRPN(fInput.value,"ntuw");
     } else {throw "Massive radio button problem. Should be unreachable.";}
 
-    console.log("=====================================================");
     let n;
     for (n of nSpace){
         eigenStorage.push(eigenstate(n.re,Vs[n.re].re));
     }
 }
 
-function integralCheck(){
+function integralCheck(momentum=false){
     //this is a test: it outputs the probability that the particle is "somewhere" should be close to 1
-    let dx = 2*L/detail;
-    let ys = yspace.divBy(yscaling).mag2();//returns the true pdf of the wavefunction as CompArr()
-    let P = ys.sum().mult(2).sub( ys[0].add(ys[ys.length-1]) ).mult(dx/2).re;
-    let ps = [];
-    let state;
-    for (state of eigenStorage){
-        ps.push(state.divBy(yscaling).mag2().sum().mult(2).sub(state[0].add(state[state.length-1])).mult(L/detail).re);
+    let ys,dx;
+    if (momentum){
+        dx = 2*pDomainSize/detail;
+        ys = phi.divBy(yscaling).mag2();
+    } else {
+        dx = 2*L/detail;
+        ys = yspace.divBy(yscaling).mag2();//returns the true pdf of the wavefunction as CompArr()
     }
-    return [P,ps];//Performs trapezoidal integration
+    return ys.sum().mult(2).sub( ys[0].add(ys[ys.length-1]) ).mult(dx/2);//Performs trapezoidal integration
 }
 
 function drawPsi(time=0){
@@ -196,7 +197,6 @@ function drawPsi(time=0){
     let i;
     for (i of range(detail)){
         push();
-        rotateX(Number(pdfSlider.value));
         translate(xscaling*xspace[i].re,-pdf[i].re,0);
         normalMaterial();
         specularMaterial("red");
@@ -207,6 +207,33 @@ function drawPsi(time=0){
         normalMaterial();
         specularMaterial((2*Math.PI*i)/detail,100,60);
         sphere(Math.log(100*pdf[i].re+Math.E));
+        pop();
+    }
+    if (showMomentum){drawPhi();}
+}
+
+function drawPhi(){
+    //always called after drawPsi
+    phi = laceySwitch(FFT(yspace,true).mult((2*L)/(Math.sqrt(2*Math.PI)*detail)));
+    pDomainSize = detail*Math.PI/(2*L);
+    let xscaledown = m;
+    pspace = linspaceC(-pDomainSize/xscaledown,pDomainSize/xscaledown,detail);
+    momPDF = phi.divBy(yscaling).mag2(false).map(y=>y*yscaling);
+    let i;
+    for (i of range(detail)){
+        if (pspace[i].mag(false)>m*L*4 || momPDF[i]<0.001){continue;}
+        push();
+        translate(xscaling*pspace[i].re,-momPDF[i],0);
+        normalMaterial();
+        specularMaterial("orange");
+        let scale=Math.log(200*momPDF[i]+Math.E);
+        box(scale*2,scale,scale*5);
+        pop();
+        push();
+        translate(xscaling*pspace[i].re,-phi[i].re,phi[i].im);
+        normalMaterial();
+        specularMaterial("navy");
+        ellipsoid(scale*2,scale,scale);
         pop();
     }
 }
@@ -250,36 +277,36 @@ function axes(){
         cone(10, 20, 4, 16);
     pop();
     noStroke();
+    let potScale = yscaling*V0;
     if (cam.eyeX<0){//this switches the rendering order of the lids depending on where the camera is to make sure both are always rendered properly
         push();
         //positive cap
-            translate(xscaling*L/2,0,0);
-            rotateY(-Math.PI/2);
+            translate(xscaling*(L+barrWidth)/2,0,0);
             fill(0,100,50,50);
-            plane(yscaling*Math.log(V0+Math.E),yscaling*Math.log(V0+Math.E),4,4);
+            box(xscaling*barrWidth,potScale,potScale);
         pop();
         
         push();
         //negativ cap
-            translate(-xscaling*L/2,0,0);
-            rotateY(-Math.PI/2);
+            translate(-xscaling*(L+barrWidth)/2,0,0);
             fill(0,100,50,50);
-            plane(yscaling*Math.log(V0+Math.E),yscaling*Math.log(V0+Math.E),4,4);
+            box(xscaling*barrWidth,potScale,potScale);
+
         pop();
     } else {
         push();
         //negativ cap
-            translate(-xscaling*L/2,0,0);
-            rotateY(-Math.PI/2);
+            translate(-xscaling*(L+barrWidth)/2,0,0);
             fill(0,100,50,50);
-            plane(yscaling*Math.log(V0+Math.E),yscaling*Math.log(V0+Math.E),4,4);
+            box(xscaling*barrWidth,potScale,potScale);
+
         pop();
         push();
         //positive cap
-            translate(xscaling*L/2,0,0);
-            rotateY(-Math.PI/2);
+            translate(xscaling*(L+barrWidth)/2,0,0);
             fill(0,100,50,50);
-            plane(yscaling*Math.log(V0+Math.E),yscaling*Math.log(V0+Math.E),4,4);
+            box(xscaling*barrWidth,potScale,potScale);
+
         pop();
     }
 }
@@ -323,6 +350,7 @@ function setup() {
     cButton = document.getElementById("cButton");
     detailIn = document.getElementById("detailIn");
     scaleSlider = document.getElementById("scaleSlider");
+    yScaleSlider = document.getElementById("yScaleSlider");
     Ulabel = document.getElementById("Ulabel");
     Wlabel = document.getElementById("Wlabel");
     sliderURe = document.getElementById("sliderURe");
@@ -332,14 +360,14 @@ function setup() {
     fInput = document.getElementById("fInput");
     setters = document.getElementById("setters");
     advVal = document.getElementById("setVal");
-    pdfSlider = document.getElementById("pdfSlider");
+    showMomBox = document.getElementById("showMOM");
     recalculate();
 }   
 
 function draw() {
-    xscaling = scaleSlider.value*width/5;
+    xscaling = scaleSlider.value*width/8;
     // updates of m and L force a recalculate()
-    if ( m!=Number(massSlider.value)||L!=Number(LSlider.value)||V0!=Number(VSlider.value)){
+    if ( m!=Number(massSlider.value)||L!=Number(LSlider.value)||V0!=Number(VSlider.value)||yScaler!=Number(yScaleSlider.value) ){
         m = Number(massSlider.value);
         L = Number(LSlider.value);
         V0= Number(VSlider.value);
@@ -365,6 +393,9 @@ function draw() {
     can.background(0);
     if(!document.getElementById("sidebar").matches(":hover")){
         orbitControl();
+    }
+    if (showMomentum!=showMomBox.checked){
+        showMomentum=showMomBox.checked;
     }
     push();//Draws the skybox
         noStroke();

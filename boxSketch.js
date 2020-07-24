@@ -1,14 +1,15 @@
 'use strict'
-let can,cam,space,massLabel,massSlider,LLabel,LSlider,scaleSlider,cInput,cButton,fInput,RPNstack,setters,advVal,pdfSlider,
-    tempEl,timeAcc,detailIn,maxN,maxNLabel,maxNSlider,sliderURe,sliderUIm,sliderWRe,sliderWIm,Ulabel,Wlabel,standingBox;
+let can,cam,space,massLabel,massSlider,LLabel,LSlider,scaleSlider,cInput,cButton,fInput,RPNstack,setters,advVal,phi,pDomainSize,pspace,momPDF,tempEl,timeAcc,detailIn,maxN,maxNLabel,maxNSlider,sliderURe,sliderUIm,sliderWRe,sliderWIm,Ulabel,Wlabel,standingBox,showMomBox;
 let t=0;//current simulation time in milliseconds (including time acceleration) (when draw Psi is called I set time to 1000th of this)
 let funkMode = "manual";//typed in or calculated coefficients
+let yScaler = 1;
 let nSpace = linspaceC(1,16,16);//the ns
+let showMomentum=false;
 let u = new Complex(1);//user defined custom variables
 let w = new Complex(1);
-let detail = 301;//number of position points to plot
+let detail = 256;//number of position points to plot
 let m = 25;//mass of particle
-let L = 2;//length of box
+let L = 4;//length of box
 let coef = (CompArr.ones(16)).vecNorm();
 let xspace  = linspaceC(-L/2,L/2,detail);
 let yspace, yInc, yRef;
@@ -67,7 +68,7 @@ function eigenstate(n,standing=false){
     //standing=false means it won't return the split up version with two simultaneous momenta
     //standing=true will only return the two opposite momenta, positive first
     //just the shape of the eigenstates, nothing time-dependant
-    if ( !Number.isInteger(n) || n<1){throw "n must be an integer greater than 1";}
+    if ( !Number.isInteger(n) || n<1){throw "n must be a positive integer";}
     let k = n*Math.PI/L;
     if(standing){
         let A = yscaling*Math.sqrt(0.5/L);//sqrt(1/2L)
@@ -93,7 +94,6 @@ function eigenstate(n,standing=false){
         }
     }
 }
-
 
 function superposition(time=0,standing=false){
     //standing=false means it won't return the split up version with two simultaneous momenta
@@ -131,7 +131,8 @@ function superposition(time=0,standing=false){
 
 function recalculate(){
     xspace  = linspaceC(-L/2,L/2,detail);
-    yscaling=(Math.sqrt(L)*height/4);
+    yScaler = Number(yScaleSlider.value);
+    yscaling= yScaler*(Math.sqrt(L)*height/4);
     eigenStorage.length=0;
     let n;
     if (funkMode=="function"){
@@ -143,10 +144,16 @@ function recalculate(){
     }
 }
 
-function integralCheck(){
+function integralCheck(momentum=false){
     //this is a test: it outputs the probability that the particle is "somewhere" should be close to 1
-    let dx = L/detail;
-    let ys = yspace.divBy(yscaling).mag2();//returns the true pdf of the wavefunction as CompArr()
+    let ys,dx;
+    if (momentum){
+        dx = 2*pDomainSize/detail;
+        ys = phi.divBy(yscaling).mag2();
+    } else {
+        dx = L/detail;
+        ys = yspace.divBy(yscaling).mag2();//returns the true pdf of the wavefunction as CompArr()
+    }
     return ys.sum().mult(2).sub( ys[0].add(ys[ys.length-1]) ).mult(dx/2);//Performs trapezoidal integration
 }
 
@@ -163,7 +170,6 @@ function drawPsi(time=0){
     let i;
     for (i of range(detail)){
         push();
-        rotateX(Number(pdfSlider.value));
         translate(xscaling*xspace[i].re,-pdf[i].re,0);
         normalMaterial();
         specularMaterial("red");
@@ -192,6 +198,33 @@ function drawPsi(time=0){
             cone(scale,2*scale,4);
             pop();
         }
+    }
+    if (showMomentum){drawPhi(time);}
+}
+
+function drawPhi(){
+    //always called after drawPsi
+    phi = laceySwitch(FFT(yspace,true).mult((L)/(Math.sqrt(2*Math.PI)*detail)));
+    pDomainSize = detail*Math.PI/(L);
+    let xscaledown = m;
+    pspace = linspaceC(-pDomainSize/xscaledown,pDomainSize/xscaledown,detail);
+    momPDF = phi.divBy(yscaling).mag2(false).map(y=>y*yscaling);
+    let i;
+    for (i of range(detail)){
+        if (pspace[i].mag(false)>m*L*4 || momPDF[i]<0.001){continue;}
+        push();
+        translate(xscaling*pspace[i].re,-momPDF[i],0);
+        normalMaterial();
+        specularMaterial("orange");
+        let scale=Math.log(200*momPDF[i]+Math.E);
+        box(scale,scale,scale*5);
+        pop();
+        push();
+        translate(xscaling*pspace[i].re,-phi[i].re,phi[i].im);
+        normalMaterial();
+        specularMaterial("navy");
+        ellipsoid(scale*2,scale,scale);
+        pop();
     }
 }
 
@@ -283,11 +316,19 @@ function buttFunk(){//function for when apply button pushed
     funkMode = document.querySelector('input[name="coeffMode"]:checked').value;
     if (funkMode=="manual"){
         coef=new CompArr(cInput.value.split(",")).vecNorm();
-        nSpace = linspaceC(1,coef.length,coef.length);
+        if (coef.length==1){
+            nSpace = new CompArr(ONEc);
+        } else {
+            nSpace = linspaceC(1,coef.length,coef.length);
+        }
     } else if (funkMode=="function"){
         maxN = Number(maxNSlider.value);
         RPNstack = parseToRPN(fInput.value,"ntuw");
-        nSpace = linspaceC(1,maxN,maxN);
+        if (maxN==1){
+            nSpace = new CompArr(ONEc);
+        } else {
+            nSpace = linspaceC(1,maxN,maxN);
+        }
     } else {throw "Massive radio button problem. Should be unreachable.";}
     recalculate();}
 
@@ -313,6 +354,7 @@ function setup() {
     cButton = document.getElementById("cButton");
     detailIn = document.getElementById("detailIn");
     scaleSlider = document.getElementById("scaleSlider");
+    yScaleSlider = document.getElementById("yScaleSlider");
     maxNLabel = document.getElementById("maxNLabel");
     maxNSlider = document.getElementById("maxNSlider");
     Ulabel = document.getElementById("Ulabel");
@@ -324,15 +366,15 @@ function setup() {
     fInput = document.getElementById("fInput");
     setters = document.getElementById("setters");
     advVal = document.getElementById("setVal");
-    pdfSlider = document.getElementById("pdfSlider");
     standingBox = document.getElementById("standingBox");
+    showMomBox = document.getElementById("showMOM");
     recalculate();
 }   
 
 function draw() {
     xscaling = scaleSlider.value*width/5;
     // updates of m and L force a recalculate()
-    if ( m!=Number(massSlider.value)||L!=Number(LSlider.value)||standingBox.checked!=showStanding){
+    if ( m!=Number(massSlider.value)||L!=Number(LSlider.value)||standingBox.checked!=showStanding||yScaler != Number(yScaleSlider.value) ){
         m = Number(massSlider.value);
         L = Number(LSlider.value);
         showStanding = standingBox.checked;
@@ -357,6 +399,9 @@ function draw() {
     if (maxN!=Number(maxNSlider.value)){
         maxN=Number(maxNSlider.value);
         maxNLabel.innerHTML = "<b>*</b>Max value of n: " + maxN;
+    }
+    if (showMomentum!=showMomBox.checked){
+        showMomentum=showMomBox.checked;
     }
     can.background(0);
     if(!document.getElementById("sidebar").matches(":hover")){

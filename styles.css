@@ -1,6 +1,12 @@
 body{
   background-color: navy;
 }
+[id^=helpPanel]{
+}
+
+.helpButton{
+  background: repeating-linear-gradient(to bottom right, rgba(255,255,255,0.1) 0%, rgba(50,50,200,0.5) 23%);
+}
 
 #burger {
   position:fixed;

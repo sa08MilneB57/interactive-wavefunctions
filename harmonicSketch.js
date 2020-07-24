@@ -1,21 +1,22 @@
 'use strict'
-let can,cam,space,massLabel,massSlider,KLabel,KSlider,cInput,cButton,fInput,RPNstack,setters,advVal,pdfSlider,
-    tempEl,timeAcc,detailIn,xSizeIn,maxN,maxNLabel,maxNSlider,sliderURe,sliderUIm,sliderWRe,sliderWIm,Ulabel,Wlabel;
+let can,cam,space,massLabel,massSlider,KLabel,KSlider,cInput,cButton,fInput,RPNstack,setters,advVal,phi,pDomainSize,pspace,momPDF,
+    tempEl,timeAcc,detailIn,xSizeIn,maxN,maxNLabel,maxNSlider,sliderURe,sliderUIm,sliderWRe,sliderWIm,Ulabel,Wlabel,showMomBox,scaleSlider,yScaleSlider;
 let t=0;
+let showMomentum=false;
 let funkMode = "manual";
-let nSpace = linspaceC(0,16,17);
+let nSpace = linspaceC(0,15,16);
 let u = new Complex(1);
 let w = new Complex(1);
-let detail = 301;
-let domainSize = 5;
+let detail = 256;
+let domainSize = 3;
 let coef = (CompArr.ones(16)).vecNorm();
 let xspace  = linspace(-domainSize,domainSize,detail);
 let yspace;
 let pdf;
 let yscaling;//this is a variable to bump up the size of the numbers so javascript doesn't disapear them all
 let xscaling;
-let m = 25;
-let K = 2;
+let m = 3;
+let K = 6;
 let w0 = Math.sqrt(K/m);
 let a = m*w0;
 let potential = xspace.map(x=>K*(x**2)/2);
@@ -75,12 +76,12 @@ function eigenstate(n){
     return new CompArr(nket);}
 
 function recalculate(){
+    xspace  = linspace(-domainSize,domainSize,detail);
     w0 = Math.sqrt(K/m);
     a = m*w0;
     potential = xspace.map(x=>K*(x**2)/2);
     ax = xspace.map(x=>x*Math.sqrt(a));
-    xscaling=(width/2)/domainSize;
-    yscaling=(height/2)
+    yscaling=yScaleSlider.value*(height/2);
     eigenStorage.length=0;
     let n;
     if (funkMode=="function"){
@@ -109,20 +110,27 @@ function superposition(time=0){
     }
     return psi;
 }
-function integralCheck(){
+function integralCheck(momentum=false){
     //this is a test: it outputs the probability that the particle is "somewhere" should be close to 1
-    let dx = 2*domainSize/detail;
-    let ys = yspace.divBy(yscaling).mag2();//returns the true pdf of the wavefunction as CompArr()
+    let ys,dx;
+    if (momentum){
+        dx = 2*pDomainSize/detail;
+        ys = phi.divBy(yscaling).mag2();
+    } else {
+        dx = 2*domainSize/detail;
+        ys = yspace.divBy(yscaling).mag2();//returns the true pdf of the wavefunction as CompArr()
+    }
     return ys.sum().mult(2).sub( ys[0].add(ys[ys.length-1]) ).mult(dx/2);//Performs trapezoidal integration
 }
 
 function drawPsi(time=0){
+    xscaling=scaleSlider.value*width/10;
+
     yspace = superposition(time);
     pdf = yspace.divBy(yscaling).mag2(false).map(y=>y*yscaling);
     let i;
     for (i of range(detail)){
         push();
-        rotateX(Number(pdfSlider.value));
         translate(xscaling*xspace[i],-pdf[i],0);
         normalMaterial();
         specularMaterial("red");
@@ -135,17 +143,44 @@ function drawPsi(time=0){
         sphere(Math.log(100*pdf[i]+Math.E));
         pop();
     }
+    if (showMomentum){drawPhi();}
+}
+
+function drawPhi(){
+    //always called after drawPsi
+    phi = laceySwitch(FFT(yspace,true).mult((2*domainSize)/(Math.sqrt(2*Math.PI)*detail)));
+    pDomainSize = detail*Math.PI/(2*domainSize);
+    let xscaledown = m;
+    pspace = linspaceC(-pDomainSize/xscaledown,pDomainSize/xscaledown,detail);
+    momPDF = phi.divBy(yscaling).mag2(false).map(y=>y*yscaling);
+    let i;
+    for (i of range(detail)){
+        if (pspace[i].mag(false)>m*domainSize*3 || momPDF[i]<0.001){continue;}
+        push();
+        translate(xscaling*pspace[i].re,-momPDF[i],0);
+        normalMaterial();
+        specularMaterial("orange");
+        let scale=Math.log(200*momPDF[i]+1);
+        box(scale,scale,scale*5);
+        pop();
+        push();
+        translate(xscaling*pspace[i].re,-phi[i].re,phi[i].im);
+        normalMaterial();
+        specularMaterial("navy");
+        ellipsoid(scale*2,scale,scale);
+        pop();
+    }
 }
 
 function axes(){
     strokeWeight(3);
     push();stroke("red");beginShape();
-    vertex(-width/2,0,0);
-    vertex(width/2,0,0);
+    vertex(-xscaling*domainSize,0,0);
+    vertex(xscaling*domainSize,0,0);
     endShape();
     let i;
-    for (i of range(domainSize)){
-    translate(width/(2*domainSize),0,0);
+    for (i of range(floor(domainSize))){
+        translate(xscaling,0,0);
         push();
         rotateZ(-Math.PI/2);
         cone(10, 20, 4, 16);
@@ -154,19 +189,19 @@ function axes(){
     pop();
 
     push();stroke("blue");beginShape();
-    vertex(0,height/2,0);
-    vertex(0,-height/2,0);
+    vertex(0,yscaling,0);
+    vertex(0,-yscaling,0);
     endShape();
-    translate(0,-height/2,0);
+    translate(0,-yscaling,0);
     rotateX(Math.PI);
     cone(10, 20, 4, 16);
     pop();
 
     push();stroke("green");beginShape();
-    vertex(0,0,-height/2);
-    vertex(0,0,height/2);
+    vertex(0,0,-yscaling);
+    vertex(0,0,yscaling);
     endShape();
-    translate(0,0,height/2);
+    translate(0,0,yscaling);
     rotateX(Math.PI/2);
     cone(10, 20, 4, 16);
     pop();
@@ -184,8 +219,6 @@ function keyPressed() {
 
 function buttFunk(){//function for when apply button pushed
     detail = Number(detailIn.value);
-    domainSize = Number(xSizeIn.value);
-    xspace  = linspace(-domainSize,domainSize,detail);
     funkMode = document.querySelector('input[name="coeffMode"]:checked').value;
     if (funkMode=="manual"){
         coef=new CompArr(cInput.value.split(",")).vecNorm();
@@ -229,17 +262,22 @@ function setup() {
     fInput = document.getElementById("fInput");
     setters = document.getElementById("setters");
     advVal = document.getElementById("setVal");
-    pdfSlider = document.getElementById("pdfSlider");
+    showMomBox = document.getElementById("showMOM");
+    scaleSlider = document.getElementById("scaleSlider");
+    yScaleSlider = document.getElementById("yScaleSlider");
     recalculate();
 }   
 
 function draw() {
-    // updates of m and K force a recalculate()
-    if ( m!=Number(massSlider.value)||K!=Number(KSlider.value) ){
+    // updates of m, yscaling and K force a recalculate()
+    if ( m!=Number(massSlider.value)||K!=Number(KSlider.value)||domainSize!=Number(xSizeIn.value)||yscaling!=yScaleSlider.value*(height/2) ){
         m = Number(massSlider.value);
         K = Number(KSlider.value);
+        yscaling = Number(yScaleSlider.value);
+        domainSize = Number(xSizeIn.value);
         massLabel.innerHTML = "Mass: " + m;
         KLabel.innerHTML ='Spring "K": ' + K;
+        document.getElementById("LLabel").innerHTML = "Length of X Axis: " + domainSize;
         recalculate();}
     // updates of U and W will need something to happen
     if (u.re!=Number(sliderURe.value)||u.im!=Number(sliderUIm.value)
@@ -255,6 +293,9 @@ function draw() {
     if (maxN!=Number(maxNSlider.value)){
         maxN=Number(maxNSlider.value);
         maxNLabel.innerHTML = "<b>*</b>Max value of n: " + maxN;
+    }
+    if (showMomentum!=showMomBox.checked){
+        showMomentum=showMomBox.checked;
     }
     can.background(0);
     if(!document.getElementById("sidebar").matches(":hover")){

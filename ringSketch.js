@@ -1,12 +1,14 @@
 'use strict'
-let can,cam,per,space,massLabel,massSlider,RLabel,RSlider,cInput,cButton,fInput,RPNstack,setters,advVal,smartBox,smartMode,
-    tempEl,timeAcc,detailIn,startN,startNIn,startNSpan,minN,minNLabel,minNSlider,maxN,maxNLabel,maxNSlider,sliderURe,sliderUIm,sliderWRe,sliderWIm,Ulabel,Wlabel;
+let can,cam,per,space,massLabel,massSlider,RLabel,RSlider,cInput,cButton,fInput,RPNstack,setters,advVal,smartBox,smartMode,phi,pDomainSize,pspace,momPDF,tempEl,timeAcc,detailIn,startN,startNIn,startNSpan,minN,minNLabel,minNSlider,maxN,maxNLabel,maxNSlider,sliderURe,sliderUIm,sliderWRe,sliderWIm,Ulabel,Wlabel,showMomBox,scaleSlider,yScaleSlider;
 let t=0;
+let xScaler = 1;
+let yScaler = 1;
 let funkMode = "manual";
+let showMomentum=false;
 let nSpace = linspaceC(0,16,17);
 let u = new Complex(1);
 let w = new Complex(1);
-let detail = 301;
+let detail = 256;
 let coef = (CompArr.ones(16)).vecNorm();
 let xspace  = linspaceC(-Math.PI,Math.PI,detail);
 let yspace;
@@ -78,11 +80,13 @@ function eigenstate(n){
     return xspace.mult(Ic.mult(n)).exp().divBy(Math.sqrt(Math.PI*2)).mult(yscaling);}
 
 function recalculate(){
-    xscaling= width/(4*Math.PI);
+    xScaler = Number(scaleSlider.value);
+    xscaling= xScaler*width/(4*Math.PI);
+    yScaler = Number(yScaleSlider.value);
     if (R>(2*Math.PI)){
-        yscaling=(4*Math.PI*xscaling/3);
+        yscaling=yScaler*(4*Math.PI*xscaling/3);
     } else {
-        yscaling=(R*xscaling*2)/3;
+        yscaling=yScaler*(R*xscaling*2)/3;
     }
     eigenStorage.length=0;
     let n;
@@ -120,6 +124,18 @@ function integralCheck(){
     let ys = yspace.divBy(yscaling).mag2();//returns the true pdf of the wavefunction as CompArr()
     return ys.sum().mult(2).sub( ys[0].add(ys[ys.length-1]) ).mult(dx/2);//Performs trapezoidal integration
 }
+function integralCheck(momentum=false){
+    //this is a test: it outputs the probability that the particle is "somewhere" should be close to 1
+    let ys,dx;
+    if (momentum){
+        dx = 2*pDomainSize/detail;
+        ys = phi.divBy(yscaling).mag2();
+    } else {
+        dx = 2*Math.PI/detail;
+        ys = yspace.divBy(yscaling).mag2();//returns the true pdf of the wavefunction as CompArr()
+    }
+    return ys.sum().mult(2).sub( ys[0].add(ys[ys.length-1]) ).mult(dx/2);//Performs trapezoidal integration
+}
 
 function drawPsi(time=0){
     yspace = superposition(time);
@@ -139,6 +155,38 @@ function drawPsi(time=0){
         sphere(Math.log(100*pdf[i]+Math.E));
         pop();
     }
+    if (showMomentum){drawPhi();}
+}
+
+function drawPhi(){
+    //always called after drawPsi
+    let L = Math.PI*2
+    phi = laceySwitch(FFT(yspace,true).mult((L)/(Math.sqrt(2*Math.PI)*detail)));
+    pDomainSize = detail*Math.PI/(L);
+    let xscaledown = m;
+    pspace = linspaceC(-pDomainSize/xscaledown,pDomainSize/xscaledown,detail);
+    momPDF = phi.divBy(yscaling).mag2(false).map(y=>y*yscaling);
+    let i;
+    for (i of range(detail)){
+        if (momPDF[i]<0.001){continue;}
+        push();
+        translate(cylToCart(R*xscaling,pspace[i].re,momPDF[i]));
+        normalMaterial();
+        specularMaterial("orange");
+        let scale=Math.log(200*momPDF[i]+Math.E);
+        rotateZ(Math.PI/2);
+        rotateX(pspace[i].re);
+        box(scale,scale,scale*5);
+        pop();
+        push();
+        translate(cylToCart(R*xscaling+phi[i].im,pspace[i].re,phi[i].re));
+        normalMaterial();
+        specularMaterial("navy");
+        rotateZ(Math.PI/2);
+        rotateX(pspace[i].re);
+        ellipsoid(scale*2,scale,scale);
+        pop();
+    }
 }
 
 function axes(){
@@ -149,7 +197,18 @@ function axes(){
         rotateX(Math.PI/2);
         torus(R*xscaling,1,24,3);
     pop();
-
+    push();
+        noStroke();
+        ambientMaterial("red");
+        for (let i of range(floor(R*2*Math.PI)) ){
+            push();
+            translate(cylToCart(R*xscaling,-i/R,0));
+            rotateZ(Math.PI/2);
+            rotateX(-i/R);
+            cone(15, 20, 12, 16);
+            pop();            
+        }
+    pop();
     push();
         stroke("blue");
         beginShape();
@@ -160,7 +219,9 @@ function axes(){
         endShape();
         translate(0,-yscaling,R*xscaling);
         rotateX(Math.PI);
-        cone(10, 20, 4, 16);
+        noStroke();
+        ambientMaterial("blue");
+        cone(15, 20, 12, 16);
     pop();
 
     push();
@@ -173,7 +234,9 @@ function axes(){
         endShape();
         translate(0,0,R*xscaling+yscaling);
         rotateX(Math.PI/2);
-        cone(10, 20, 4, 16);
+        noStroke();
+        ambientMaterial("green");
+        cone(15, 20, 12, 16);
     pop();
 }
 
@@ -241,6 +304,8 @@ function setup() {
     minNSlider = document.getElementById("minNSlider");
     maxNLabel = document.getElementById("maxNLabel");
     maxNSlider = document.getElementById("maxNSlider");
+    scaleSlider = document.getElementById("scaleSlider");
+    yScaleSlider = document.getElementById("yScaleSlider");
     Ulabel = document.getElementById("Ulabel");
     Wlabel = document.getElementById("Wlabel");
     sliderURe = document.getElementById("sliderURe");
@@ -250,12 +315,13 @@ function setup() {
     fInput = document.getElementById("fInput");
     setters = document.getElementById("setters");
     advVal = document.getElementById("setVal");
+    showMomBox = document.getElementById("showMOM");
     recalculate();
 }   
 
 function draw() {
     // updates of m and R force a recalculate()
-    if ( m!=Number(massSlider.value)||R!=Number(RSlider.value) ){
+    if ( m!=Number(massSlider.value)||R!=Number(RSlider.value)||xScaler!=Number(scaleSlider.value)||yScaler!=Number(yScaleSlider.value) ){
         m = Number(massSlider.value);
         R = Number(RSlider.value);
         massLabel.innerHTML = "Mass: " + m;
@@ -283,6 +349,9 @@ function draw() {
         } else {
             startNSpan.classList.remove("w3-disabled");
         }
+    }
+    if (showMomentum!=showMomBox.checked){
+        showMomentum=showMomBox.checked;
     }
     if (startN!=Number(startNIn.value)){
         startN=Number(startNIn.value);
