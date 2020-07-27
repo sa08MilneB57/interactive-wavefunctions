@@ -1,5 +1,5 @@
 'use strict'
-let can,cam,space,massLabel,massSlider,LLabel,LSlider,scaleSlider,yscaleSlider,cInput,cButton,fInput,RPNstack,setters,advVal,phi,pDomainSize,pspace,momPDF,tempEl,timeAcc,detailIn,maxN,maxNLabel,maxNSlider,sliderURe,sliderUIm,sliderWRe,sliderWIm,Ulabel,Wlabel,standingBox,showMomBox;
+let can,cam,space,massLabel,massSlider,LLabel,LSlider,scaleSlider,yScaleSlider,cInput,cButton,fInput,RPNstack,setters,advVal,phi,pDomainSize,pspace,momPDF,tempEl,timeAcc,detailIn,maxN,maxNLabel,maxNSlider,sliderURe,sliderUIm,sliderWRe,sliderWIm,Ulabel,Wlabel,standingBox,showMomBox;
 let t=0;//current simulation time in milliseconds (including time acceleration) (when draw Psi is called I set time to 1000th of this)
 let funkMode = "manual";//typed in or calculated coefficients
 let yScaler = 1;
