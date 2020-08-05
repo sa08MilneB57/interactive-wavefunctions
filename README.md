@@ -9,7 +9,7 @@ The |n> is the position wavefunction in the energy eigenbasis so n is 0-indexed.
 ## How to use 
 Please open index.html using a service like githack or download the repository and use it on a locally hosted server.
 
-Githack is the simplest as you just paste the link to the html file into the service and follow the developement link.
+Githack is the simplest as you just paste the link to the html file into the service and follow the release (CDN) link.
 Valid Mathematical Functions
 
 The suggested coeficients file contains some interesting things to type in.
