@@ -32,11 +32,11 @@ function replaceAt(str,index,replacement) {
 }
 
 function laceySwitch(a){
-    //    |   | Splits array in half
-    //    \  /  and does this so
-    //     /    the 0th element
-    //    / \   is now the middle
-    //   |  |   and the last comes before it
+    //    ||  || Splits array in half
+    //    \\ //  and does this so
+    //     //   the 0th element
+    //   // \\   is now the middle
+    //  ||  ||   and the last comes before it
     // Handy for moving those unsightly nyquist frequencies to the
     // ends of an array so you can hide them O_O
     let N = a.length;

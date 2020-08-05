@@ -1,6 +1,7 @@
 'use strict'
 let can,cam,per,space,massLabel,massSlider,RLabel,RSlider,cInput,cButton,fInput,RPNstack,setters,advVal,smartBox,smartMode,phi,pDomainSize,pspace,momPDF,tempEl,timeAcc,detailIn,startN,startNIn,startNSpan,minN,minNLabel,minNSlider,maxN,maxNLabel,maxNSlider,sliderURe,sliderUIm,sliderWRe,sliderWIm,Ulabel,Wlabel,showMomBox,scaleSlider,yScaleSlider;
 let t=0;
+let openHelpPanels=0;
 let xScaler = 1;
 let yScaler = 1;
 let funkMode = "manual";
@@ -365,7 +366,7 @@ function draw() {
         maxNLabel.innerHTML = "<b>*</b>Max value of n: " + maxN;
     }
     can.background(0);
-    if(!document.getElementById("sidebar").matches(":hover")){
+    if(!(document.getElementById("sidebar").matches(":hover")||openHelpPanels>0)){
         orbitControl();
     }
     push();//Draws the skybox

@@ -14,6 +14,7 @@ function barclose() {
 }
 function helpopen(name,page="") {
     let panel = document.getElementById("helpPanel"+name);
+    openHelpPanels++;
     if (panel == null){
         switch (name){
             case "momentum":
@@ -27,7 +28,7 @@ function helpopen(name,page="") {
                                    + '<p>The position wavefunction tells you how likely a particle is to be found in a particular place. The momentum wavefunction tells you how likely it is to be found with a specific amount of momentum. Which is basically how hard it is capable of hitting something.</p>\n'
                                    + '<p>Because these simulations are taking place over very small distances, we know the position more precisely, and the values of momentum the wavefunction corresponds to spread out and can get very large. I have scaled it down by the mass so that the wavefunction displayed shows how likely it is to have a particular velocity, rather than momentum.</p>\n'
                                    + '<p>i.e. 1 unit on the x-axis means 1 unit of distance per second</p>\n'
-                                   + '<p>The momentum wavefunction is represented by the dark blue ovaloids and the probability density of momentum is represented by the orange bars. You will notice it is less detailed than the position wavefunction and that changing the number of points doesn\'t change that. The reasons are well beyond the scope of this project but for more information about why, look up "The Fourier Transform" its some very lovely maths.</p>\n'
+                                   + '<p>The momentum wavefunction is represented by the dark blue ovaloids and the probability density of momentum is represented by the orange bars. You will notice that the level of detail doesn\'t depend on the detail of the position wavefunction and that changing the length of the x-axis makes the momentum function more detailed. The reasons are well beyond the scope of this project but for more information about why, look up "The Fourier Transform" its some very lovely maths.</p>\n'
                                    + '<input id="helpClose" type="button" class="w3-btn w3-card-4 w3-ripple w3-display-topright w3-purple w3-hover-deep-purple" value="X" onClick="helpclose(\'momentum\')"/>\n';
                 document.body.appendChild(panel);
                 break;
@@ -37,8 +38,8 @@ function helpopen(name,page="") {
                 panel.setAttribute("style","display:none");
                 panel.setAttribute("class",helpClass);
                 panel.innerHTML =   '<h3>Help- "Wavefunctions"</h3>\n'
-                                    + '<p>The question "What is a wavefunction?" will earn the person who definitively answers it a Nobel Prize. Some phycisists think its just an accounting trick and has "no physical meaning" until we measure it. "Many Worlds" followers think its the result of parallel universes mixing together. "Pilot Wave" theorists think its a real physical thing that "guides" particles. Everybody agrees that the wavefunction represents the probability that a particle will have certain properties, in our case, a position.</p>\n'
-                                    + '<p>The wavefunction itself is plotted by the rainbow coloured spheres. When we say it represents probability we mean that if you square the distance of that sphere from the zero line you get something called a probability density function. This is represented by the red cubes. The probability of finding a particle in any part of the x-axis is equal to the area underneath the curve in that area. The area under the whole curve is 1, which means there is a 100% chance the particle is "somewhere".</p>\n'
+                                    + '<p>The question "What exactly is a wavefunction?" will probably earn the person who definitively answers it a Nobel Prize. Some phycisists believe its an accounting trick and has "no physical meaning" until we measure it. "Many Worlds" followers think its the result of parallel universes mixing together. "Pilot Wave" or Bohmian mechanics followers think its a real physical thing that merely "guides" particles. Everybody agrees that the wavefunction is useful and carries information about the probability that a particle will have certain properties, in our case, a position.</p>\n'
+                                    + '<p>The wavefunction itself is plotted by the rainbow coloured spheres. When we say it represents probability we mean that if you square the distance of that sphere from the zero line you get something called a probability density function. This is represented by the red cubes. The probability of finding a particle in any part of the x-axis is equal to the area underneath the curve in that area. The area under the whole curve is 1, which means there is a 100% chance the particle is "somewhere". The area vs height distinction is an important one, the probability of finding a particle is partly dependent on the sensitivity of your detector. So a detector that works over a wider span of the x-axis will have a high chance of finding the particle.</p>\n'
                                     + '<input id="helpClose" type="button" class="w3-btn w3-card-4 w3-ripple w3-display-topright w3-purple w3-hover-deep-purple" value="X" onClick="helpclose(\'Wavefunctions\')"/>';
                 document.body.appendChild(panel);
                 break;
@@ -49,8 +50,10 @@ function helpopen(name,page="") {
                   panel.setAttribute("class",helpClass);
                   panel.innerHTML =   '<h3>Help- "Quantum Numbers"</h3>\n'
                                       + '<p>For all but one (Finite Well) of the systems simulated on this site, there are an infinite number of states the particle could have, but even if there wasn\'t, it would be useful to number them anyway. These numbers are called quantum numbers and an electron in a regular atom has four of them that index the possible energies and angular momentums and spins...</p>\n'
-                                      + '<p>Nothing on this site is so complicated as an atom and all the simulations have only one quantum number "n" which indexes the allowed energy levels. So a bigger n means that state has more energy.</p>\n'
-                                      + '<p>Quantum objects can exist in more than one state simultaneously and that\'s what the equation to the left describes. The symbol on the left stands for the position wavefunction and its called "Psi". The big "E" symbol on the right hand side is called "Sigma" and it means "sum". The "<b>|n></b>" symbol stands for the energy state "n", and Cn stands for "Coefficient of n". Coefficients are just a number that you mutiply each state by. You can choose them below.</p>\n'
+                                      + '<p>Nothing on this site is so complicated as an atom and all the simulations have only one quantum number "n" which indexes the allowed energy levels. So a bigger n means that state has more energy. The energy affects how the state evolves over time.</p>\n'
+                                      + '<img src="./equations/phi.gif"/>\n'
+                                      + '<p>What this equation says is that higher energy states will rotate faster than lower energy ones. This difference in rotation speed is what makes it possible for stationary states to add together to make something that moves. For the simulations here, that h-bar under the E is just 1 and is omitted from most of the equations on this site.</p>\n'
+                                      + '<p>Quantum objects can exist in more than one state simultaneously and that\'s what the equation to the in the orange box describes. The symbol on the left of the equals sign stands for the position wavefunction and its called "Psi". The big "E" symbol on the right hand side is called "Sigma" and it means "sum". The "<b>|n></b>" symbol stands for the energy state "n", and Cn stands for "Coefficient of n". Coefficients are just a number that you mutiply each state by. You can choose them below.</p>\n'
                                       + '<p>What this equation describes is called "superposition" and its literally saying "sum the states together": <i>C<sub>1</sub></i><b>|1></b>+<i>C<sub>2</sub></i><b>|2></b>+<i>C<sub>3</sub></i><b>|3></b>+<i>C<sub>4</sub></i><b>|4></b></p>\n'
                                       + '<input id="helpClose" type="button" class="w3-btn w3-card-4 w3-ripple w3-display-topright w3-purple w3-hover-deep-purple" value="X" onClick="helpclose(\'QuantumNumbers\')"/>';
                   document.body.appendChild(panel);
@@ -121,6 +124,7 @@ function helpopen(name,page="") {
 }
 
 function helpclose(name) {
+  openHelpPanels--;
   document.getElementById("helpPanel"+name).style.display = "none";
 }
 

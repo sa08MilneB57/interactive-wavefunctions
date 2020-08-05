@@ -2,6 +2,7 @@
 let can,cam,space,massLabel,massSlider,KLabel,KSlider,cInput,cButton,fInput,RPNstack,setters,advVal,phi,pDomainSize,pspace,momPDF,
     tempEl,timeAcc,detailIn,xSizeIn,maxN,maxNLabel,maxNSlider,sliderURe,sliderUIm,sliderWRe,sliderWIm,Ulabel,Wlabel,showMomBox,scaleSlider,yScaleSlider;
 let t=0;
+let openHelpPanels=0;
 let showMomentum=false;
 let funkMode = "manual";
 let nSpace = linspaceC(0,15,16);
@@ -298,7 +299,7 @@ function draw() {
         showMomentum=showMomBox.checked;
     }
     can.background(0);
-    if(!document.getElementById("sidebar").matches(":hover")){
+    if(!(document.getElementById("sidebar").matches(":hover")||openHelpPanels>0)){
         orbitControl();
     }
     push();//Draws the skybox

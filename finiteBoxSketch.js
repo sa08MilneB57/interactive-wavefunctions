@@ -1,5 +1,6 @@
 'use strict'
 let can,cam,space,massLabel,massSlider,LLabel,LSlider,VLabel,VSlider,scaleSlider,yScaleSlider,cInput,cButton,fInput,RPNstack,setters,advVal,tempEl,timeAcc,detailIn,N,sliderURe,sliderUIm,sliderWRe,sliderWIm,Ulabel,Wlabel,NLabel,NLabel2,phi,pDomainSize,pspace,momPDF,showMomBox;
+let openHelpPanels=0;
 let t=0;//current simulation time in milliseconds (including time acceleration) (when draw Psi is called I set time to 1000th of this)
 let funkMode = "function";//typed in or calculated coefficients
 let barrWidth = 0.1;
@@ -391,7 +392,7 @@ function draw() {
     }
     //updates of other variables do not, but do update variables and html
     can.background(0);
-    if(!document.getElementById("sidebar").matches(":hover")){
+    if(!(document.getElementById("sidebar").matches(":hover")||openHelpPanels>0)){
         orbitControl();
     }
     if (showMomentum!=showMomBox.checked){

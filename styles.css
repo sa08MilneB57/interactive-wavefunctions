@@ -1,7 +1,10 @@
 body{
   background-color: navy;
 }
-[id^=helpPanel]{
+.help-panel{
+  max-width: 70%;
+  max-height: 70%;
+  overflow: auto;
 }
 
 .helpButton{
@@ -30,12 +33,15 @@ body{
   background-image:url('./textures/space.jpg');
   background-size: cover;
   background-position: center;
+  overflow: hidden;
 }
 #navi{
+  max-height: 110%;
+  max-width: 80%;
+  overflow: auto;
   text-align: center;
 }
 #navibar{
-  position: sticky;
   top:0;
 }
 .naviButt:hover{

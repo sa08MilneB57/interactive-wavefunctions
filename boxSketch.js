@@ -1,5 +1,6 @@
 'use strict'
 let can,cam,space,massLabel,massSlider,LLabel,LSlider,scaleSlider,yScaleSlider,cInput,cButton,fInput,RPNstack,setters,advVal,phi,pDomainSize,pspace,momPDF,tempEl,timeAcc,detailIn,maxN,maxNLabel,maxNSlider,sliderURe,sliderUIm,sliderWRe,sliderWIm,Ulabel,Wlabel,standingBox,showMomBox;
+let openHelpPanels=0;
 let t=0;//current simulation time in milliseconds (including time acceleration) (when draw Psi is called I set time to 1000th of this)
 let funkMode = "manual";//typed in or calculated coefficients
 let yScaler = 1;
@@ -71,7 +72,7 @@ function eigenstate(n,standing=false){
     if ( !Number.isInteger(n) || n<1){throw "n must be a positive integer";}
     let k = n*Math.PI/L;
     if(standing){
-        let A = yscaling*Math.sqrt(0.5/L);//sqrt(1/2L)
+        let A = yscaling*Math.sqrt(0.5/L);//scaling for incident and reflected
         let iA= Ic.mult(A);
         let incident,reflected;
         if ( n%2 == 0 ){
@@ -172,13 +173,15 @@ function drawPsi(time=0){
         push();
         translate(xscaling*xspace[i].re,-pdf[i].re,0);
         normalMaterial();
-        specularMaterial("red");
+        if(showStanding){specularMaterial(0,100,50,50);}
+        else{specularMaterial(0,100,50);}
         box(Math.log(200*pdf[i].re+Math.E));
         pop();
         push();
         translate(xscaling*xspace[i].re,-yspace[i].re,yspace[i].im);
         normalMaterial();
-        specularMaterial((2*Math.PI*i)/detail,100,60);
+        if(showStanding){specularMaterial((2*Math.PI*i)/detail,100,60,50);}
+        else{specularMaterial((2*Math.PI*i)/detail,100,60);}
         sphere(Math.log(100*pdf[i].re+Math.E));
         pop();
         if (showStanding){
@@ -404,7 +407,7 @@ function draw() {
         showMomentum=showMomBox.checked;
     }
     can.background(0);
-    if(!document.getElementById("sidebar").matches(":hover")){
+    if(!(document.getElementById("sidebar").matches(":hover")||openHelpPanels>0)){
         orbitControl();
     }
     push();//Draws the skybox
