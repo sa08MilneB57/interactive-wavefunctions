@@ -1,6 +1,4 @@
 'use strict'
-
-
 //=======Variable Checkers==============//
 function isComp(arg){return arg instanceof Complex;}
 function isCArr(arg){return arg instanceof CompArr && arg.every(isComp);}
@@ -27,27 +25,39 @@ function debugCall(message,...objs){
         for (obj of objs){console.log(obj);}
     }
 }
-function matchIndex(re,str){
-  let matches = [];
-  let match;
-  while ((match = re.exec(str)) != null) {
-    matches.push(match.index);
-  }
-  return matches;
-}
 
 function replaceAt(str,index,replacement) {
     //replaces the indexth element of string with replacement and returns new string
     return str.substr(0, index) + replacement+ str.substr(index + replacement.length);
 }
 
+function laceySwitch(a){
+    //    ||  || Splits array in half
+    //    \\ //  and does this so
+    //     //   the 0th element
+    //   // \\   is now the middle
+    //  ||  ||   and the last comes before it
+    // Handy for moving those unsightly nyquist frequencies to the
+    // ends of an array so you can hide them O_O
+    let N = a.length;
+    if (N%2==0){//even length array
+        return a.slice(N/2,N).concat(a.slice(0,N/2));
+    } else {
+        return a.slice(Math.ceil(N/2),N).concat(a.slice(0,Math.ceil(N/2)));
+    }
+}
+
 
 //=======Array Handling and Generation=====///
-function* range(number) {
-    //generator from 0 to n-1
-    for (let i=0;i<number;i++) {
+function* range(n,n2="intentionally left blank",step=1) {
+    //generator functions identically to python's range()
+    let start,stop;
+    if (n2=="intentionally left blank"){start=0;stop=n;}
+    else {start=n;stop=n2;}
+    for (let i=start;i<stop;i+=step) {
         yield i;} 
 }
+
 //functions like python's zip
 const zip = (...rows) => [...rows[0]].map( (_,c) => rows.map(row => row[c]) ) ;
 
@@ -87,6 +97,18 @@ function factorial(number) {
     } else {console.log("Warning, that's a big number to factorial."); return number*factorial(number-1);}
 }
 
+function reverse_bits(val,width){
+    //takes the last "width" bits of the number "val" in binary and reverses them
+    //input and output are normal integers
+    //reverse_bits(0b111110100,4) will return the same as reverse_bits(0b0100,4) because only the last 4 matter
+    let result = 0;
+    for (let _ of range(width)){
+        result = (result << 1)|(val & 1);
+        val = val>>>1
+    }
+    return result;
+}
+
 function H (n,x) {
     /*returns the value of the nth hermitian 
     polynomial at x, accepts numbers or arrays of numbers*/
@@ -118,7 +140,7 @@ class Complex {
         this.re = a;
         this.im = b;
         } else {
-            debugCall("new Complex Failure","Real:",a,"Im:",b);
+            debugCall("new Complex Failure","Re:",a,"Im:",b);
             throw "Invalid Arguments when trying to call Complex";
         }
     }
@@ -223,11 +245,7 @@ class Complex {
     }
     arg(ascomp=true) {
         //returns the argument of this in radians
-        let ans;
-        if(this.re>=0){ans=Math.acos(this.re/this.mag(false));}
-        else{ans=-Math.acos(this.re/this.mag(false));}
-        if (ascomp){return new Complex(ans);
-        }else{return ans;}
+        return Math.atan2(this.im,this.re);
     }
     neg() {
         //returns the negative of this
@@ -243,7 +261,8 @@ class Complex {
     }
     normalise() {
         //returns a complex number with equivalent argument but magnitude 1
-        return Complex.polar(1,this.arg()); 
+        if (this.re==0 && this.im==0){return new Complex(0,0);}
+        return this.divBy(this.mag()); 
     }
     //======ARITHMETIC=========
     equals(other,within=0) {
@@ -348,18 +367,28 @@ class Complex {
     }
     //===========Trigonometric Functions==================
     sin(){
+        if (this.im==0){return new Complex(Math.sin(this.re));}
         let i = new Complex(0,1);
         return this.mult(i).exp().sub(this.mult(i.neg()).exp()).divBy(i.mult(2));
     }
     cos(){
+        if (this.im==0){return new Complex(Math.cos(this.re));}
         let i = new Complex(0,1);
         return this.mult(i).exp().add(this.mult(i.neg()).exp()).divBy(2);
     }
-    tan(){return this.sin().divBy(this.cos());}
+    tan(){
+        if (this.im==0){return new Complex(Math.tan(this.re));}
+        return this.sin().divBy(this.cos());}
 
-    sinh(){return this.exp().sub(this.neg().exp()).divBy(2);}
-    cosh(){return this.exp().add(this.neg().exp()).divBy(2);}
-    tanh(){return this.sinh().divBy(this.cosh());}
+    sinh(){
+        if (this.im==0){return new Complex(Math.sinh(this.re));}
+        return this.exp().sub(this.neg().exp()).divBy(2);}
+    cosh(){
+        if (this.im==0){return new Complex(Math.cosh(this.re));}
+        return this.exp().add(this.neg().exp()).divBy(2);}
+    tanh(){
+        if (this.im==0){return new Complex(Math.tanh(this.re));}
+        return this.sinh().divBy(this.cosh());}
     asin(branch=0){
         let i = new Complex(0,1);
         return this.square().neg().add(1).sqrt(branch).add(this.mult(i)).ln(branch).mult(i.neg());}
@@ -408,6 +437,7 @@ class CompArr extends Array {
         let i;
         for (i of range(length)){Z.push(1);}
         return Z;}
+
     static repeat(value,length){
         if (isCompLike(value)){value=new Complex(value);}
         let Z = new CompArr();
@@ -448,7 +478,7 @@ class CompArr extends Array {
         let len = arrays.length;
         for (i=0; i<len ; i++){//loop through items
             if (!isCArr(arrays[i])){//check if current item is a complex number
-                arrays[i] = new CompArr(arrays[i]);//if not, casts to complex
+                arrays[i] = new CompArr(arrays[i]);//if not, casts to complex array
             }
         }
         return super.concat(...arrays);
@@ -563,55 +593,74 @@ class CompArr extends Array {
     //===========ARRAY-ONLY MATHS=============================//
     sum(){return this.reduce((x,y) => x.add(y));}
     product(){return this.reduce((x,y) => x.mult(y));}
+    dft(){
+        //returns the discrete fourier transform of the series
+        let N = this.length;
+        let Zhat = new CompArr();
+        let k;
+        let n;
+        for (k=0; k<N ; k++){
+            let Zk = new Complex(0);
+            for (n=0; n<N; n++){
+                let factor = Complex.polar(1,-2*Math.PI*k*n/N);
+                Zk = Zk.add(this[n].mult(factor));}
+            Zhat.push(Zk);}
+        return Zhat;
+    }
+    mean(){
+        return this.sum().divBy(this.length);
+    }
 
+
+    //Extremes, Spans and Sizes
     maxRe (ascomp=true)  {
-        ans = Math.max(...this.re);
+        let ans = Math.max(...this.re);
         if (ascomp){return new Complex(ans);
         } else { return ans;}}
     lrgstRe (ascomp=true){
-        ans = Math.max(...this.re.map( x=>Math.abs() ));
+        let ans = Math.max(...this.re.map( x=>Math.abs() ));
         if (ascomp){return new Complex(ans);
         } else { return ans;}}
     minRe (ascomp=true)  {
-        ans = Math.min(...this.re);
+        let ans = Math.min(...this.re);
         if (ascomp){return new Complex(ans);
         } else { return ans;}}
     smlstRe (ascomp=true){
-        ans = Math.min(...this.re.map( x=>Math.abs() ));
+        let ans = Math.min(...this.re.map( x=>Math.abs() ));
         if (ascomp){return new Complex(ans);
         } else { return ans;}}
     spanRe (ascomp=true) {
-        ans = this.maxRe-this.minRe;
+        let ans = this.maxRe-this.minRe;
         if (ascomp){return new Complex(ans);
         } else { return ans;}}
 
     maxIm (ascomp=true)  {
-        ans = Math.max(...this.im);
+        let ans = Math.max(...this.im);
         if (ascomp){return new Complex(ans);
         } else { return ans;}}
     lrgstIm (ascomp=true){
-        ans = Math.max(...this.im.map( x=>Math.abs() ));
+        let ans = Math.max(...this.im.map( x=>Math.abs() ));
         if (ascomp){return new Complex(ans);
         } else { return ans;}}
     minIm (ascomp=true)  {
-        ans = Math.min(...this.im);
+        let ans = Math.min(...this.im);
         if (ascomp){return new Complex(ans);
         } else { return ans;}}
     smlstIm (ascomp=true){
-        ans = Math.min(...this.im.map( x=>Math.abs() ));
+        let ans = Math.min(...this.im.map( x=>Math.abs() ));
         if (ascomp){return new Complex(ans);
         } else { return ans;}}
     spanIm (ascomp=true) {
-        ans = this.maxIm-this.minIm;
+        let ans = this.maxIm-this.minIm;
         if (ascomp){return new Complex(ans);
         } else { return ans;}}
 
     maxMag (ascomp=true) {
-        ans = Math.max(...this.mag());
+        let ans = Math.max(...this.mag());
         if (ascomp){return new Complex(ans);
         } else { return ans;}}
     minMag (ascomp=true) {
-        ans = Math.min(...this.mag());
+        let ans = Math.min(...this.mag());
         if (ascomp){return new Complex(ans);
         } else { return ans;}}
 
@@ -621,9 +670,10 @@ class CompArr extends Array {
     vecNorm() {
         //returns normalised vector
         return this.divBy(this.vecMag());}
+
 }
 
-///======================EXPRESSION PARSER====================================================================///
+///======================EXPRESSION PARSER==============================================================///
 function parseToRPN(expression,allowedVars=""){
     //Converts mathematical expressions to RPN
     //Uses slightly tweaked shunting yard algorithm to convert to a queue in
@@ -632,8 +682,8 @@ function parseToRPN(expression,allowedVars=""){
     if (/(.).*\1/.test(allowedVars)){debugCall("repeated variable names");throw "repeated variable names";}
     if (/[pie]/.test(allowedVars)){debugCall("No pie allowed.");
         throw "The letters p, i, and e are not allowed as math variables.";}
-    
-    expression=expression.replace(/\s/g,"").toLowerCase();//removes whitespace and sets lowercase
+    //removes whitespace and sets lowercase
+    expression=expression.replace(/\s/g,"").toLowerCase();
     //REPLACE "--" with "+"
     expression = expression.replace(/--/g,"+");
     //REPLACE UNARY "-" with alternate  "_"
@@ -644,7 +694,7 @@ function parseToRPN(expression,allowedVars=""){
     //This defines the valid functions
     //let validOperand = /^((([uvwte]|pi|\d+(\.\d+)?)i)|(i?([uvwte]|pi|\d+(\.\d+)?)))/;
     let validOperand = new RegExp("^(((["+ allowedVars +"e](?!xp)|pi|\\d+(\\.\\d+)?)i)|(i?(["+ allowedVars +"e](?!xp)|pi|\\d+(\\.\\d+)?)))");
-    let validFunction = /^(sin|cos|tan|sinh|cosh|tanh|asin|acos|atan|asinh|acosh|atanh|sqrt|square|exp|ln|log|root|re|im|mag|arg|conj)/;
+    let validFunction = /^(sin|cos|tan|sinh|cosh|tanh|asin|acos|atan|asinh|acosh|atanh|sqrt|square|exp|ln|log|root|re|im|mag|arg|conj|norm)/;
     let validUnaryPre = /^_/;
     let validBinary = /^[+\-*\/\^]/;
     let maxIter = expression.length;
@@ -654,7 +704,11 @@ function parseToRPN(expression,allowedVars=""){
     let curtoken,poppables;
     while (expression.length>0){
         debugCall("SoL "+iters);
-        if (validOperand.test(expression)){//if it starts with a number
+        if (validFunction.test(expression)){//if it starts with a number
+            curtoken = validFunction.exec(expression)[0];
+            opstack.push(curtoken);
+            expression = expression.replace(validFunction,"");
+        } else if (validOperand.test(expression)){//if it starts with a number
             curtoken = validOperand.exec(expression)[0];
             outqueue.push(curtoken);
             expression = expression.replace(validOperand,"");
@@ -662,10 +716,6 @@ function parseToRPN(expression,allowedVars=""){
             curtoken = validUnaryPre.exec(expression)[0];
             opstack.push(curtoken);
             expression = expression.replace(validUnaryPre,"");
-        } else if (validFunction.test(expression)){
-            curtoken = validFunction.exec(expression)[0];
-            opstack.push(curtoken);
-            expression = expression.replace(validFunction,"");
         } else if (expression[0]==","){
             curtoken = ",";
             while (opstack[opstack.length - 1]!="("){//pops until it finds a left bracket
@@ -738,7 +788,7 @@ function evalC(expression,allowedVars="",...variables){
         "square":[1,squareC],"sqrt":[1,sqrtC],"exp":[1,expC],"ln":[1,lnC],
         "log":[2,logC],"root":[2,rootC],
         "re":[1,reC],"im":[1,imC],
-        "mag":[1,magC],"arg":[1,conjC],
+        "mag":[1,magC],"arg":[1,argC],"conj":[1,conjC],"norm":[1,normaliseC],
         "pi":[0,PIc],"e":[0,Ec]};
     //this section is so you can translate to RPN once and then evaluate the expression times when variables change to minimise load
     let inQueue,tempvar1,tempvar2,curtoken;
@@ -771,7 +821,7 @@ function evalC(expression,allowedVars="",...variables){
         debugCall("EoL outStack:",outStack);
         }
     if (outStack.length!=1){debugCall("outStack length issue");throw "parsing error";}
-    return outStack[0];
+    return cast(outStack[0]);
 }
 
 
@@ -790,10 +840,8 @@ function cast(z){
     //casts strings,numbers, and length 2 arrays of numbers to Complex
     //casts arrays of any other length to CompArr
     if (isCompLike(z) ){
-        debugCall("was complike");
         z = new Complex(z);
     } else if (isArr(z)){
-        debugCall("was array");
         z=new CompArr(z);
     } else if ( (!isComp(z))&&(!isCArr(z)) ){
         debugCall("Problem Casting z:",z);
@@ -991,3 +1039,74 @@ function linspaceC(low,high,len) {
     return arr;
 }
 
+/// Fourier Transform Section ///
+
+function FFT(series,inverse=false){
+    //helper function does no computation itself
+    //does not perform scaling on forward or inverse transform
+    let d = series.length;//d for detail
+    if (d == 0){
+        return new CompArr();
+    } else if ((d & (d-1))==0){//if length is 2**n
+        return _FFT_CT(series,inverse);
+    } else {
+        return _FFT_BLS(series,inverse);
+    }
+}
+
+function _FFT_CT(series,inverse=false){
+    //Radix2 Cooley-Tukey algorithm for CompArr() objects
+    let d = series.length;//d for detail
+    let levels = d.toString(2).length - 1;
+    if (2**levels!==d){
+        debugCall("non-binary error",d,levels,series);
+        throw "Series Length Must Be A Power Of Two For CT Algorithm";}
+    let c,i,j;
+    let phasors = new CompArr();
+    if (inverse){c=2*Math.PI/d;}else{c=-2*Math.PI/d;}
+    for (i of range(Math.floor(d/2))){
+        phasors.push(Complex.polar(1,i*c));}
+    let s=new CompArr();
+    for (i of range(d)){//reorders series
+        s.push(series[reverse_bits(i,levels)]);}
+    let size=2;
+    while (size <= d){
+        let half = Math.floor(size/2);
+        let tstep = Math.floor(d/size);
+        for (i of range(0,d,size)){
+            let k=0;
+            for (j of range(i,i+half)){
+                let temp = s[j+half].mult(phasors[k]);
+                s[j + half] = s[j].sub(temp);
+                s[j] = s[j].add(temp);
+                k += tstep;}
+        }
+        size *=2;}
+    return s;
+}
+
+function _FFT_BLS(series,inverse=false){
+    //Bluestein Chirp-Z transform Algorithm for FFT
+    let d=series.length;//d for detail
+    let m = 2**((d*2).toString(2).length);
+    let c,i;//c for coeficient, i for index 
+    if (inverse){c=Math.PI/d;}else{c=-Math.PI/d;}
+    let phasors = new CompArr();
+    for (i of range(d)){
+        phasors.push(Complex.polar(1,(i*i%(2*d))*c));}
+    //temporary vectors for preprocessing
+    let avec= zipmapC(multC,series,phasors).concat(CompArr.zeros(m-d));
+    let bvec= phasors.slice(0,d).concat(CompArr.zeros(m-(2*d-1))).concat(phasors.slice(1).reverse()).conj();
+    let cvec= _convolve(avec,bvec).slice(0,d);
+    return zipmapC(multC,cvec,phasors);
+}
+
+function _convolve(xs,ys){
+    //circular convolution of two CompArr()s
+    if (xs.length!=ys.length){throw "ah cannae convolve it capn, the vectors are different lengths";}
+    let d=xs.length;//d for detail
+    xs = FFT(xs);
+    ys = FFT(ys);
+    let result = FFT(zipmapC(multC,xs,ys),true);
+    return result.divBy(d);//scales the output because FFT doesn't
+}

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="EN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" type="text/css" href="https://www.w3schools.com/w3css/4/w3.css">
+  <link rel="stylesheet" type="text/css" href="styles.css">
+  <title>Interactive Particle In A Finite Square Potential</title>
+  <script src="mathplus.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.0.0/lib/p5.js"></script>
+</head>
+
+<body>    
+  <div id="containment">
+    
+    <img id="burger" class="w3-btn w3-purple w3-card-4 w3-hover-deep-purple" src="./textures/burger.svg" width="5%" onClick="baropen()"/>
+
+    <div id="sidebar" class="w3-sidebar w3-animate-opacity w3-khaki">
+      <div id="navibar" class="w3-bar w3-khaki w3-card-4">
+        <a href="index.html" class="w3-btn w3-bar-item w3-wide w3-large w3-ripple w3-purple w3-hover-deep-purple w3-bar-item">Home</a>
+        <span class="w3-bar-item"><b>Particle In A Finite Square Potential</b>
+        <input type="button" class="helpButton w3-card-2 w3-ripple w3-round w3-purple w3-hover-deep-purple" value="?" onClick="helpopen('Introduction')"/>
+        </span>
+      </div>
+      <div class="w3-container w3-red"><b>Position</b> Arrowheads correspond to units of distance.</div>
+      <div class="w3-container w3-blue"><b>Real</b> Axis of Wavefunction<input type="button" class="helpButton w3-card-2 w3-ripple w3-round w3-aqua w3-hover-blue" value="?" onClick="helpopen('Wavefunctions')"/></div>
+      <div class="w3-container w3-green"><b>Imaginary</b> Axis of Wavefunction<input type="button" class="helpButton w3-card-2 w3-ripple w3-round w3-aqua w3-hover-blue" value="?" onClick="helpopen('Complex')"/></div>
+      <div class="w3-container w3-orange"><input id="showMOM" type="checkbox" autocomplete="off"/><b>Momentum</b> Display Momentum Wavefunction<input type="button" class="helpButton w3-card-2 w3-ripple w3-round w3-aqua w3-hover-blue" value="?" onClick="helpopen('momentum')"/></div>
+      <div class="w3-container">Play Speed(1=RealTime):</br>
+        <input id="timeAcc" type="number" step="0.2" value="1" autocomplete="off" style="width:4em"/>
+        <input id="timeRes" type="button" class="w3-btn w3-card-4 w3-ripple w3-round w3-purple w3-hover-deep-purple" value="time=0" onClick="resetTime()"/>
+      </div>
+      <div class="w3-container">
+        <span class="label">X Scaling:</span>
+        <input id="scaleSlider" class="usrinput" type="range" min="0.2" max="2" value="1" step="0.1" autocomplete="off"/>
+      </div>
+      <div class="w3-container">
+        <span class="label">Y Scaling:</span>
+        <input id="yScaleSlider" class="usrinput" type="range" min="0.2" max="2" value="1" step="0.1" autocomplete="off"/>
+      </div>
+      <div class="w3-container">
+        <span id="massLabel" class="label">Mass: 3</span>
+        <input id="massSlider" class="usrinput" type="range" min="0.2" max="20" value="3" step="0.1" autocomplete="off"/>
+      </div>
+      <div class="w3-container">
+        <span id="LLabel" class="label">Length "L": 3</span>
+        <input id="LSlider" class="usrinput" type="range" min="0.5" max="20" value="6" step="0.1" autocomplete="off"/>
+      </div>
+      <div class="w3-container">
+        <span id="VLabel" class="label">Potential "V&#8320;": 3</span>
+        <input id="VSlider" class="usrinput" type="range" min="0.4" max="5" value="3" step="0.1" autocomplete="off"/>
+      </div>
+      <div class="w3-container">
+        <div class="w3-red w3-container w3-card-4">
+          <div class="w3-container">
+            <span class="label">*No. of points:</span>
+            <input id="detailIn" type="number" class="usrinput" style="width: 5em;" min="1" step="10" value="256" autocomplete="off"/>
+          </div>
+          <div id="psiequation" class="w3-bar w3-panel w3-small w3-deep-orange w3-card-4 w3-round-large">
+            <img class="w3-bar-item" src="./equations/psi.gif" alt="psi equals the sum of coefficents multiplied by their  corresponding n-ket"/>
+            <input type="button" class="helpButton w3-card-2 w3-ripple w3-round w3-aqua w3-hover-blue" value="?-n" onClick="helpopen('QuantumNumbers')"/>
+            <input type="button" class="helpButton w3-card-2 w3-ripple w3-round w3-aqua w3-hover-blue" value="?-c" onClick="helpopen('Coefficients')"/>
+          </div>
+          <div class="w3-green w3-panel w3-card-4">
+            <div><input type="radio" name="coeffMode" value="manual" autocomplete="off"/>
+            <span id="upToN"><b>*</b>Manually Input Coefficients: (Up to N)</span><input type="button" class="helpButton w3-card-2 w3-ripple w3-round w3-aqua w3-hover-blue" value="?" onClick="helpopen('Manual')"/></div>
+            <input id="cInput" value="1,1,1"  autocomplete="off"/>
+          </div>
+          <div class="w3-teal w3-panel w3-card-4">
+            <div><input type="radio" name="coeffMode" value="function" checked autocomplete="off"/>
+            Define <b>C</b>n=<b>f</b>(n,t,u,w)<input type="button" class="helpButton w3-card-2 w3-ripple w3-round w3-aqua w3-hover-blue" value="?" onClick="helpopen('FunkMode')"/></div>
+            <div id="lastN">n&lt;N</div>
+            <div id="Udiv">
+              <div id="Ulabel"><b>u</b> = 1 + 0i</div>
+              <input id="sliderURe"  type="range" min="-10" max="10" value="1" step="0.1" autocomplete="off"/>
+              <input id="sliderUIm"  type="range" min="-10" max="10" value="0" step="0.1" autocomplete="off"/>
+            </div>
+            <div id="Wdiv">    
+              <div id="Wlabel"><b>w</b> = 1 + 0i</div>
+              <input id="sliderWRe"  type="range" min="-10" max="10" value="1" step="0.1" autocomplete="off"/>
+              <input id="sliderWIm"  type="range" min="-10" max="10" value="0" step="0.1" autocomplete="off"/>
+            </div>
+            <div><b>*f</b>(n,t,u,w)=<input id="fInput" value="exp(-((n-u)^2)/(2*w^2))" autocomplete="off"/></div>
+
+          </div>
+          <div class="w3-panel">
+            <input id="cButton" type="button" class="w3-btn w3-card-4 w3-ripple w3-round w3-khaki w3-hover-deep-orange" value="Apply" onClick="buttFunk()"/>
+            *Needs "Apply"
+          </div>
+        </div>
+      </div>
+      <div>
+        <select id="setters">
+          <option value="maxReU">Real U Slider: Max</option>
+          <option value="minReU">Real U Slider: Min</option>
+          <option value="maxImU">Imaginary U Slider: Max</option>
+          <option value="minImU">Imaginary U Slider: Min</option>
+          <option value="maxReW">Real W Slider: Max</option>
+          <option value="minReW">Real W Slider: Min</option>
+          <option value="maxImW">Imaginary W Slider: Max</option>
+          <option value="minImW">Imaginary W Slider: Min</option>
+          <option value="massMax">Mass Slider: Max</option>
+          <option value="massMin">Mass Slider: Min</option>
+          <option value="VMax">V0 Slider: Max</option>
+          <option value="VMin">V0 Slider: Min</option>
+          <option value="lengthMax">Length Slider: Max</option>
+          <option value="lengthMin">Length Slider: Min</option>
+        </select>
+        <div>
+          <input id="setVal" type="number" step="1" value="1" autocomplete="off"/>
+          <input id="setBut" type="button" class="w3-btn w3-card-4 w3-ripple w3-round w3-purple w3-hover-deep-purple" value="Set" onClick="advSetting()"/>
+        </div>
+      </div>
+    </div>
+    <img id="sideclose" class="w3-btn w3-card-4 w3-ripple w3-purple w3-hover-deep-purple w3-bar-item" src="./textures/doublearrow.svg" onClick="barclose()"/>
+  </div>
+  <div id="helpPanelIntroduction" style="display:none" class="help-panel w3-panel  w3-card-4 w3-blue w3-display-middle w3-display-container">
+    <h3>Help- "Finite Potential Well"</h3>
+    <img id="eqNket" src="./equations/FINnket.gif"/>
+    <p>The Particle In A Box is a useful approximation, but not very realistic. In order to perfectly confine a particle to a segment of a line, you'd need infinite energy in real life. In this simulation you can choose the strength of the wall "V<sub>0</sub>" and all the usual things like mass and the size of the space etc. In this one though there is a maximum energy level defined by the conditions because, if the particle has more energy than the Barrier, then it can completely escape.</p>
+    <p>The "n" values count up from 0 to whatever the maximum is. The maximum is visible at the top of the green and teal boxes for choosing coefficients. In manual mode it tells you how many coefficients you can type. In function mode it tells you what the maximum value of "n" is.</p>
+    <p>This simulation shows quantum tunneling, you can see the particle "leaking out" of the barrier even though it doesn't classically have enough energy to leave. Its almost like a toddler having a small chance of being able to take three steps on a stairway in one stride. This is an important phenomenon for computer designers because if you have thin wires next to each other, the electrons can leak out into nearby wires causing problems.</p>
+    <p>The equation for each state in this simulation is far more complicated than I'm making it seem. The values of A,B,G,alpha and k are dependant on the potential well but not in a simple way that can be represented with a mathematical function. The way they are calculated is by first calculating the allowable energies, using that to work out the allowed ks and then normalising each individual state with the additional condition that it must be continuous at the boundary. These calculations are unfortunately beyond the scope of this help panel but can be done with some basic calculus and patience.</p>
+    <input id="helpClose" type="button" class="w3-btn w3-card-4 w3-ripple w3-display-topright w3-purple w3-hover-deep-purple" value="X" onClick="helpclose('Introduction')"/>
+  </div>
+  <script src="finiteBoxSketch.js"></script>
+  <script src="panels.js"></script>
+</body>
+
+</html>
